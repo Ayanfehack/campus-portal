@@ -27,11 +27,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // PostgreSQL Connection Configuration
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'campus_portal',
-    password: 'cluster4', // Update with your actual PostgreSQL password
-    port: 5432,
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:cluster4@localhost:5432/campus_portal',
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 const nodemailer = require('nodemailer');
