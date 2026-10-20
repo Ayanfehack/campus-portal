@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Student Support & Complaint Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); }
+        .orb { position: absolute; border-radius: 50%; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: inset -10px -10px 20px rgba(0,0,0,0.3); }
+        .orb-1 { width: 320px; height: 320px; top: -80px; left: -80px; }
+        .orb-2 { width: 220px; height: 220px; bottom: 20px; left: 180px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 md:p-6">
+
+    <div class="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[640px] flex flex-col relative">
+
+        <!-- ==================== 1. AUTHENTICATION VIEW ==================== -->
+        <div id="auth-view" class="w-full flex flex-col md:flex-row min-h-[640px]">
+            <div class="w-full md:w-1/2 bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 p-8 lg:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                <div class="orb orb-1 opacity-80"></div>
+                <div class="orb orb-2 opacity-90"></div>
+                <div class="relative z-10 my-auto">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-medium mb-6">
+                        <i class="fa-solid fa-graduation-cap text-yellow-300"></i> Portal v2.0
+                    </div>
+                    <h1 class="text-3xl lg:text-4xl font-extrabold tracking-tight mb-4 uppercase leading-tight">CAMPUS PORTAL</h1>
+                    <p class="text-blue-100 text-sm leading-relaxed opacity-90 font-light">AI-driven complaint routing and academic support scheduling for students and staff.</p>
+                </div>
+                <div class="relative z-10 text-xs text-blue-200/80 font-light">&copy; 2026 Campus Support System.</div>
+            </div>
+
+            <div class="w-full md:w-1/2 p-6 lg:p-10 flex flex-col justify-center bg-white relative overflow-y-auto">
+                
+                <!-- SIGN IN -->
+                <div id="signInContainer">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Sign in</h2>
+                        <p class="text-xs text-gray-500 mt-1">Enter your Student or Staff ID.</p>
+                    </div>
+                    <form onsubmit="handleLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">ID Number / Matric No</label>
+                            <input type="text" id="loginUserId" required placeholder="CSC/2022/149 or STAFF/001" 
+                                class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Password</label>
+                            <input type="password" id="loginPassword" required placeholder="••••••••" 
+                                class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                        <button type="submit" class="w-full py-3.5 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded-xl text-sm">Sign in</button>
+                    </form>
+                    <p class="text-center text-xs text-gray-500 mt-6">
+                        Don't have an account? <button onclick="switchAuthMode('signup')" class="text-blue-600 font-bold hover:underline ml-1">Sign up</button>
+                    </p>
+                </div>
+
+                <!-- SIGN UP (STUDENT / STAFF) -->
+                <div id="signUpContainer" class="hidden">
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">Create Account</h2>
+                        <p class="text-xs text-gray-500 mt-1">Register as a Student or Staff member.</p>
+                    </div>
+
+                    <div class="flex gap-2 mb-4 bg-gray-100 p-1 rounded-xl text-xs font-bold">
+                        <button type="button" onclick="setRegRole('student')" id="roleBtn-student" class="flex-1 py-2 rounded-lg bg-white text-blue-900 shadow-sm transition-all">Student</button>
+                        <button type="button" onclick="setRegRole('staff')" id="roleBtn-staff" class="flex-1 py-2 rounded-lg text-gray-600 transition-all">Staff / Admin</button>
+                    </div>
+
+                    <form onsubmit="handleRegister(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 uppercase">Full Name</label>
+                            <input type="text" id="regName" required placeholder="Oyinloluwa Ayanfe" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-700 uppercase" id="labelUserId">Student ID</label>
+                                <input type="text" id="regUserId" required placeholder="CSC/2022/149" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-700 uppercase">Email</label>
+                                <input type="email" id="regEmail" required placeholder="mail@campus.edu.ng" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                            </div>
+                        </div>
+
+                        <!-- STUDENT FIELDS -->
+                        <div id="studentFields" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-gray-700 uppercase">Faculty</label>
+                                    <select id="regFaculty" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                                        <option value="Technology">Technology</option>
+                                        <option value="Science">Science</option>
+                                        <option value="Arts">Arts</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-gray-700 uppercase">Department</label>
+                                    <input type="text" id="regDepartment" placeholder="Computer Science" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-700 uppercase">Level</label>
+                                <select id="regLevel" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                                    <option value="100 Level">100 Level</option>
+                                    <option value="200 Level">200 Level</option>
+                                    <option value="300 Level">300 Level</option>
+                                    <option value="400 Level">400 Level</option>
+                                    <option value="500 Level">500 Level</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- STAFF FIELDS -->
+                        <div id="staffFields" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-700 uppercase">Staff Role</label>
+                                <select id="regStaffRole" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                                    <option value="Part Adviser">Part Adviser</option>
+                                    <option value="Dean of Student Affairs">Dean of Student Affairs</option>
+                                    <option value="Cash Officer">Cash Officer</option>
+                                    <option value="Head Administrative Staff">Head Administrative Staff</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-700 uppercase">Department / Office</label>
+                                <input type="text" id="regStaffDept" placeholder="e.g. Computer Science" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 uppercase">Password</label>
+                            <input type="password" id="regPassword" required placeholder="••••••••" class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-xs outline-none">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-blue-950 text-white font-semibold rounded-xl text-xs mt-2">Create Account</button>
+                        <div id="regFeedback" class="hidden p-3 rounded-xl text-xs font-medium text-center"></div>
+                    </form>
+                    <p class="text-center text-xs text-gray-500 mt-4">
+                        Already have an account? <button onclick="switchAuthMode('signin')" class="text-blue-600 font-bold hover:underline ml-1">Sign in</button>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== 2. STUDENT DASHBOARD ==================== -->
+        <div id="student-dashboard" class="w-full hidden flex-row min-h-[640px] bg-slate-100">
+            <div class="w-64 bg-slate-900 text-slate-300 p-5 flex flex-col justify-between shrink-0">
+                <div>
+                    <div class="flex flex-col items-center text-center pb-6 border-b border-slate-800 mb-6">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xl mb-3"><span id="studentAvatar">ST</span></div>
+                        <h3 id="studName" class="font-bold text-white text-sm">Student Name</h3>
+                        <p id="studId" class="text-[11px] text-slate-400">ID</p>
+                    </div>
+                    <nav class="space-y-1">
+                        <button onclick="switchStudentTab('overview')" id="sNav-overview" class="s-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 text-white">Overview</button>
+                        <button onclick="switchStudentTab('chat')" id="sNav-chat" class="s-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white">AI Assistant</button>
+                        <button onclick="switchStudentTab('file')" id="sNav-file" class="s-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white">File Complaint</button>
+                        <button onclick="switchStudentTab('appointment')" id="sNav-appointment" class="s-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white">Book Appointment</button>
+                    </nav>
+                </div>
+                <button onclick="logout()" class="flex items-center gap-2 text-xs text-red-400 font-bold pt-4 border-t border-slate-800"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto">
+                <div id="sTab-overview" class="student-tab space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                            <p class="text-xs text-slate-500 font-medium">Total Complaints</p>
+                            <h3 id="studStatTotal" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                            <p class="text-xs text-slate-500 font-medium">Resolved Queries</p>
+                            <h3 id="studStatResolved" class="text-2xl font-extrabold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                            <p class="text-xs text-slate-500 font-medium">Appointments</p>
+                            <h3 id="studStatAppts" class="text-2xl font-extrabold text-purple-600 mt-1">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">My Tracked Tickets & Appointments</h3>
+                        <div id="studRecordList" class="space-y-3 max-h-72 overflow-y-auto"><div class="text-center py-6 text-xs text-slate-400">Loading records...</div></div>
+                    </div>
+                </div>
+
+                <!-- FILE COMPLAINT -->
+                <div id="sTab-file" class="student-tab hidden max-w-2xl bg-white p-6 rounded-2xl border space-y-4">
+                    <h3 class="text-base font-bold text-slate-800">Submit Grievance (Auto-Routed by Category)</h3>
+                    <form onsubmit="submitComplaint(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Category</label>
+                            <select id="compCategory" class="w-full py-2.5 px-3 bg-slate-50 border rounded-xl text-xs outline-none">
+                                <option value="Academic">Academic (Routes to Part Adviser)</option>
+                                <option value="Hostel">Hostel & Welfare (Routes to Dean of Student Affairs)</option>
+                                <option value="Finance">Finance & Fees (Routes to Cash Officers)</option>
+                                <option value="General">General Enquiry (Routes to Head Admin)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+                            <textarea id="compDescription" rows="4" required placeholder="Describe issue..." class="w-full p-3 bg-slate-50 border rounded-xl text-xs outline-none"></textarea>
+                        </div>
+                        <div id="compFeedback" class="hidden p-3 rounded-xl text-xs font-medium text-center"></div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Supporting Document / Receipt (Optional)</label>
+                            <input type="file" id="compAttachment" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-blue-950 text-white font-semibold rounded-xl text-xs">Submit Complaint</button>
+                    </form>
+                </div>
+
+                <!-- BOOK APPOINTMENT -->
+                <div id="sTab-appointment" class="student-tab hidden max-w-2xl bg-white p-6 rounded-2xl border space-y-4">
+                    <h3 class="text-base font-bold text-slate-800">Book Administrative Session</h3>
+                    <form onsubmit="bookAppointment(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Target Office / Staff</label>
+                            <select id="apptDepartment" class="w-full py-2.5 px-3 bg-slate-50 border rounded-xl text-xs outline-none">
+                                <option value="Dean of Student Affairs">Dean of Student Affairs</option>
+                                <option value="Part Adviser">Part Adviser</option>
+                                <option value="Cash Officer">Cash Officer</option>
+                                <option value="Head Administrative Staff">Head Administrative Staff</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Date & Time</label>
+                            <input type="datetime-local" id="apptDate" required class="w-full py-2.5 px-3 bg-slate-50 border rounded-xl text-xs outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Reason</label>
+                            <textarea id="apptReason" rows="3" required placeholder="State purpose..." class="w-full p-3 bg-slate-50 border rounded-xl text-xs outline-none"></textarea>
+                        </div>
+                        <div id="apptFeedback" class="hidden p-3 rounded-xl text-xs font-medium text-center"></div>
+                        <button type="submit" class="w-full py-3 bg-blue-950 text-white font-semibold rounded-xl text-xs">Confirm Booking</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI ASSISTANT -->
+        <div id="sTab-chat" class="student-tab hidden max-w-2xl bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+            <h3 class="text-base font-bold text-slate-800">AI Campus Assistant</h3>
+            <div id="chatWindow" class="h-64 overflow-y-auto p-4 bg-slate-50 border rounded-2xl space-y-3 text-xs">
+                <div class="flex items-start gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">AI</div>
+                    <div class="bg-white p-3 rounded-2xl rounded-tl-none border shadow-sm max-w-[80%] text-slate-800">
+                        Hello! I'm your Campus AI Assistant. How can I help you today?
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" placeholder="Type your query here..." 
+                    class="flex-1 px-4 py-2.5 bg-slate-50 border rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-600">
+                <button onclick="sendChatMessage()" class="px-5 py-2.5 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded-xl text-xs">Send</button>
+            </div>
+        </div>
+
+        <!-- ==================== 3. STAFF / ADMIN DASHBOARD ==================== -->
+        <div id="staff-dashboard" class="w-full hidden flex-row min-h-[640px] bg-slate-100">
+            <div class="w-64 bg-slate-900 text-slate-300 p-5 flex flex-col justify-between shrink-0">
+                <div>
+                    <div class="flex flex-col items-center text-center pb-6 border-b border-slate-800 mb-6">
+                        <div class="w-16 h-16 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xl mb-3"><span id="staffAvatar">AD</span></div>
+                        <h3 id="staffNameDisplay" class="font-bold text-white text-sm">Staff Name</h3>
+                        <p id="staffRoleDisplay" class="text-[11px] text-emerald-400 font-semibold mt-1">Role</p>
+                        <p id="staffDeptDisplay" class="text-[10px] text-slate-400 mt-0.5">Dept</p>
+                    </div>
+                    <nav class="space-y-1">
+                        <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white">Incoming Queue</button>
+                    </nav>
+                </div>
+                <button onclick="logout()" class="flex items-center gap-2 text-xs text-red-400 font-bold pt-4 border-t border-slate-800"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Administrative Portal</h2>
+                        <p class="text-xs text-slate-500">Showing complaints and appointment bookings routed to your office.</p>
+                    </div>
+                    <button onclick="loadAdminRecords()" class="px-3.5 py-2 bg-white border rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm">
+                        <i class="fa-solid fa-rotate mr-1"></i> Refresh Queue
+                    </button>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Assigned Complaints & Grievances</h3>
+                    <div id="adminComplaintsList" class="space-y-3 max-h-72 overflow-y-auto"><div class="text-center py-6 text-xs text-slate-400">Loading queue...</div></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Booked Appointment Requests</h3>
+                    <div id="adminAppointmentsList" class="space-y-3 max-h-72 overflow-y-auto"><div class="text-center py-6 text-xs text-slate-400">Loading appointments...</div></div>
+                </div>
+            </div>
+        </div>
+
+        
+
+    </div>
+
+    <!-- FRONTEND LOGIC -->
+    <script>
+        let currentUser = null;
+        let regRole = 'student';
+        const API_URL = 'http://localhost:3000/api';
+
+        function setRegRole(role) {
+            regRole = role;
+            document.getElementById('roleBtn-student').className = role === 'student' ? 'flex-1 py-2 rounded-lg bg-white text-blue-900 shadow-sm transition-all' : 'flex-1 py-2 rounded-lg text-gray-600 transition-all';
+            document.getElementById('roleBtn-staff').className = role === 'staff' ? 'flex-1 py-2 rounded-lg bg-white text-blue-900 shadow-sm transition-all' : 'flex-1 py-2 rounded-lg text-gray-600 transition-all';
+            
+            document.getElementById('studentFields').classList.toggle('hidden', role !== 'student');
+            document.getElementById('staffFields').classList.toggle('hidden', role !== 'staff');
+            document.getElementById('labelUserId').innerText = role === 'student' ? 'Student ID' : 'Staff ID';
+        }
+
+        function switchAuthMode(mode) {
+            document.getElementById('signInContainer').classList.toggle('hidden', mode !== 'signin');
+            document.getElementById('signUpContainer').classList.toggle('hidden', mode !== 'signup');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const feedbackEl = document.getElementById('regFeedback');
+            const payload = {
+                fullName: document.getElementById('regName').value,
+                userId: document.getElementById('regUserId').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                role: regRole,
+                faculty: regRole === 'student' ? document.getElementById('regFaculty').value : null,
+                department: regRole === 'student' ? document.getElementById('regDepartment').value : document.getElementById('regStaffDept').value,
+                level: regRole === 'student' ? document.getElementById('regLevel').value : null,
+                staffRole: regRole === 'staff' ? document.getElementById('regStaffRole').value : null
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                feedbackEl.classList.remove('hidden');
+                if (res.ok) {
+                    feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+                    feedbackEl.innerText = 'Registration successful! Redirecting to sign in...';
+                    setTimeout(() => { feedbackEl.classList.add('hidden'); switchAuthMode('signin'); }, 1500);
+                } else {
+                    feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200';
+                    feedbackEl.innerText = data.error || 'Registration failed.';
+                }
+            } catch (err) {
+                feedbackEl.classList.remove('hidden');
+                feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200';
+                feedbackEl.innerText = 'Connection error.';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const payload = {
+                userId: document.getElementById('loginUserId').value,
+                password: document.getElementById('loginPassword').value
+            };
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    currentUser = data.user;
+                    // Save session to browser storage so refresh doesn't log them out
+                    localStorage.setItem('campus_user', JSON.stringify(currentUser));
+                    
+                    renderDashboard();
+                } else {
+                    alert(data.error || 'Invalid credentials.');
+                }
+            } catch (err) {
+                alert('Server connection error.');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('campus_user'); // Clear saved session
+            document.getElementById('student-dashboard').classList.add('hidden');
+            document.getElementById('staff-dashboard').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+        }
+
+        function switchStudentTab(tab) {
+            document.querySelectorAll('.student-tab').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.s-nav').forEach(btn => {
+                btn.className = 's-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white';
+            });
+            document.getElementById(`sTab-${tab}`).classList.remove('hidden');
+            document.getElementById(`sNav-${tab}`).className = 's-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 text-white';
+            if (tab === 'overview') loadStudentRecords();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            if (!input.value.trim()) return;
+            const chatWindow = document.getElementById('chatWindow');
+            const query = input.value;
+            
+            chatWindow.innerHTML += `
+                <div class="flex items-start justify-end gap-2.5">
+                    <div class="bg-blue-950 text-white p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                        ${query}
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            setTimeout(() => {
+                chatWindow.innerHTML += `
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">AI</div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none border shadow-sm max-w-[80%] text-slate-800">
+                            I've analyzed your question regarding "${query}". For official matters, please use the "File Complaint" tab to route issues to your Part Adviser or Dean!
+                        </div>
+                    </div>
+                `;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }, 800);
+        }
+
+        function renderDashboard() {
+            document.getElementById('auth-view').classList.add('hidden');
+
+            if (currentUser.role === 'staff') {
+                document.getElementById('staff-dashboard').classList.remove('hidden');
+                document.getElementById('staff-dashboard').classList.add('flex');
+                document.getElementById('staffNameDisplay').innerText = currentUser.fullName;
+                document.getElementById('staffRoleDisplay').innerText = currentUser.staffRole;
+                document.getElementById('staffDeptDisplay').innerText = currentUser.department || 'Administration';
+                loadAdminRecords();
+            } else {
+                document.getElementById('student-dashboard').classList.remove('hidden');
+                document.getElementById('student-dashboard').classList.add('flex');
+                document.getElementById('studName').innerText = currentUser.fullName;
+                document.getElementById('studId').innerText = currentUser.userId;
+                loadStudentRecords();
+            }
+        }
+
+        async function submitComplaint(e) {
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+            }
+            
+            const feedbackEl = document.getElementById('compFeedback');
+            const formData = new FormData();
+            formData.append('studentId', currentUser.userId);
+            formData.append('studentName', currentUser.fullName);
+            formData.append('studentDepartment', currentUser.department || 'General');
+            formData.append('category', document.getElementById('compCategory').value);
+            formData.append('description', document.getElementById('compDescription').value);
+            
+            const fileInput = document.getElementById('compAttachment');
+            if (fileInput && fileInput.files[0]) {
+                formData.append('attachment', fileInput.files[0]);
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/complaints`, {
+                    method: 'POST', 
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (feedbackEl) {
+                    feedbackEl.classList.remove('hidden');
+                    if (res.ok) {
+                        feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+                        feedbackEl.innerText = `Complaint submitted! Routed to: ${data.assignedTo}`;
+                        document.getElementById('compDescription').value = '';
+                        if (fileInput) fileInput.value = '';
+                        setTimeout(async () => { 
+                            feedbackEl.classList.add('hidden'); 
+                            await loadStudentRecords(); 
+                            switchStudentTab('overview'); 
+                        }, 1500);
+                    } else {
+                        feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200';
+                        feedbackEl.innerText = data.error || 'Failed to submit complaint.';
+                    }
+                }
+            } catch (err) {
+                console.error('Submit Complaint Error:', err);
+                if (feedbackEl) {
+                    feedbackEl.classList.remove('hidden');
+                    feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200';
+                    feedbackEl.innerText = 'Server connection error.';
+                } else {
+                    alert('Server connection error.');
+                }
+            }
+        }
+
+        async function bookAppointment(e) {
+            e.preventDefault();
+            const feedbackEl = document.getElementById('apptFeedback');
+            const payload = {
+                studentId: currentUser.userId,
+                studentName: currentUser.fullName,
+                staffDepartment: document.getElementById('apptDepartment').value,
+                preferredDate: document.getElementById('apptDate').value,
+                reason: document.getElementById('apptReason').value
+            };
+            try {
+                const res = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                feedbackEl.classList.remove('hidden');
+                if (res.ok) {
+                    feedbackEl.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+                    feedbackEl.innerText = 'Appointment booked successfully!';
+                    document.getElementById('apptReason').value = '';
+                    setTimeout(async () => { feedbackEl.classList.add('hidden'); await loadStudentRecords(); switchStudentTab('overview'); }, 1500);
+                }
+            } catch (err) {
+                feedbackEl.innerText = 'Error booking appointment.';
+            }
+        }
+
+        async function loadStudentRecords() {
+            try {
+                const res = await fetch(`${API_URL}/user-data/${encodeURIComponent(currentUser.userId)}`);
+                const data = await res.json();
+                document.getElementById('studStatTotal').innerText = data.complaints.length;
+                document.getElementById('studStatResolved').innerText = data.complaints.filter(c => c.status === 'Resolved').length;
+                document.getElementById('studStatAppts').innerText = data.appointments.length;
+
+                let html = '';
+                data.complaints.forEach(c => {
+                    html += `<div class="p-3 bg-slate-50 border rounded-xl text-xs space-y-1">
+                        <div class="flex justify-between font-bold"><span>[${c.id}] ${c.category}</span><span class="text-amber-700">${c.status}</span></div>
+                        <p class="text-slate-600">${c.description}</p>
+                        <!-- ADD THIS LINE FOR ATTACHMENT RENDERING -->
+                        ${c.attachment ? `<a href="http://localhost:3000/uploads/${c.attachment}" target="_blank" class="text-blue-600 underline text-[11px] block mt-1"><i class="fa-solid fa-paperclip mr-1"></i>View Attachment</a>` : ''}
+                        <p class="text-blue-700 italic text-[11px]">Assigned Office: <strong>${c.assigned_to}</strong></p>
+                    </div>`;
+                });
+                data.appointments.forEach(a => {
+                    html += `<div class="p-3 bg-purple-50 border rounded-xl text-xs space-y-1">
+                        <div class="flex justify-between font-bold text-purple-900"><span>📅 Meeting with ${a.staff_department}</span><span>${a.status}</span></div>
+                        <p class="text-slate-600">Date: ${a.preferred_date} | Reason: ${a.reason}</p>
+                    </div>`;
+                });
+                document.getElementById('studRecordList').innerHTML = html || '<div class="text-center text-xs text-slate-400 py-6">No records found.</div>';
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadAdminRecords() {
+            try {
+                const res = await fetch(`${API_URL}/admin-data?staffRole=${encodeURIComponent(currentUser.staffRole)}&department=${encodeURIComponent(currentUser.department)}`);
+                const data = await res.json();
+
+                let compHtml = '';
+                data.complaints.forEach(c => {
+                    compHtml += `<div class="p-3.5 bg-slate-50 border rounded-xl text-xs space-y-2">
+                        <div class="flex justify-between font-bold">
+                            <span>[${c.id}] ${c.category} — Student: ${c.student_name} (${c.student_id})</span>
+                            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800">${c.status}</span>
+                        </div>
+                        <p class="text-slate-700 bg-white p-2 rounded border">${c.description}</p>
+                        <!-- ADD THIS LINE FOR STAFF TO VIEW ATTACHMENTS -->
+                        ${c.attachment ? `<a href="http://localhost:3000/uploads/${c.attachment}" target="_blank" class="text-blue-600 underline text-[11px] block mt-1"><i class="fa-solid fa-paperclip mr-1"></i>View Student Attachment</a>` : ''}
+                        <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1">
+                            <span>Office: <strong>${c.assigned_to}</strong></span>
+                            <div class="flex gap-2">
+                                <button onclick="transferTicket('${c.id}')" class="px-2.5 py-1 bg-amber-600 text-white rounded font-bold">Transfer</button>
+                                <button onclick="updateComplaintStatus('${c.id}')" class="px-3 py-1 bg-blue-600 text-white rounded font-bold">Mark Resolved</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('adminComplaintsList').innerHTML = compHtml || '<div class="text-center text-xs text-slate-400 py-6">No pending complaints.</div>';
+
+                let apptHtml = '';
+                data.appointments.forEach(a => {
+                    apptHtml += `<div class="p-3.5 bg-blue-50/50 border rounded-xl text-xs space-y-1">
+                        <div class="flex justify-between font-bold text-blue-950">
+                            <span>📅 Student: ${a.student_name} (${a.student_id})</span>
+                            <span class="text-purple-700">${a.status}</span>
+                        </div>
+                        <p class="text-slate-700"><strong>Date:</strong> ${a.preferred_date}</p>
+                        <p class="text-slate-600"><strong>Purpose:</strong> ${a.reason}</p>
+                    </div>`;
+                });
+                document.getElementById('adminAppointmentsList').innerHTML = apptHtml || '<div class="text-center text-xs text-slate-400 py-6">No appointments found.</div>';
+            } catch (err) { console.error(err); }
+        }
+
+        // Action Handlers for Transfer and Appointment Approval
+        async function transferTicket(ticketId) {
+            const newAssignee = prompt("Enter target role (Part Adviser, Dean of Student Affairs, Cash Officer, Head Administrative Staff):");
+            if (!newAssignee) return;
+            const transferReason = prompt("Reason for transferring ticket:") || "Forwarded for specialized attention.";
+            try {
+                const res = await fetch(`${API_URL}/admin/transfer-complaint`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticketId, newAssignee, transferReason })
+                });
+                if (res.ok) { alert('Ticket transferred successfully!'); loadAdminRecords(); }
+            } catch (err) { alert('Error transferring ticket.'); }
+        }
+
+        async function updateAppointmentStatus(appointmentId, status) {
+            const notes = prompt(`Enter note for student (${status}):`) || "Updated by administration.";
+            try {
+                const res = await fetch(`${API_URL}/admin/update-appointment`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ appointmentId, status, notes })
+                });
+                if (res.ok) { alert(`Appointment marked as ${status}!`); loadAdminRecords(); }
+            } catch (err) { alert('Error updating appointment.'); }
+        }
+
+        async function updateComplaintStatus(ticketId) {
+            const feedback = prompt("Enter resolution notes:", "Issue resolved.");
+            if (!feedback) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/update-complaint`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticketId, status: 'Resolved', feedback })
+                });
+                if (res.ok) { alert('Ticket updated!'); loadAdminRecords(); }
+            } catch (err) { alert('Error updating complaint.'); }
+        }
+
+        // Check if user was previously logged in on page load/refresh
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('campus_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                renderDashboard();
+            }
+        });
+    </script>
+</body>
+</html>
