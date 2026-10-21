@@ -9,6 +9,7 @@ const nodemailer = require('nodemailer');
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(express.static(path.join(__dirname)));
 
 if (!fs.existsSync('./uploads')) {
     fs.mkdirSync('./uploads');
@@ -352,8 +353,8 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html')); // Serves your landing page
 });
 
-// PASTE IT RIGHT HERE:
-app.get('/portal', (req, res) => {
+// CHANGE '/portal' TO '/portal.html' RIGHT HERE:
+app.get('/portal.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'portal.html')); // Serves your main app portal
 });
 
