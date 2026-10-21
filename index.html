@@ -691,11 +691,27 @@
         let activeRecords = { complaints: [], appointments: [] };
 
         // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const savedUser = localStorage.getItem('uniclarity_user');
             if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                setupAuthenticatedState();
+                try {
+                    const parsedUser = JSON.parse(savedUser);
+                    // Verify with the backend if this user ID still exists/is active
+                    const res = await fetch(`${API_URL}/user-data/${encodeURIComponent(parsedUser.userId)}`);
+                    
+                    if (res.ok) {
+                        currentUser = parsedUser;
+                        setupAuthenticatedState();
+                    } else {
+                        // If backend rejects the user ID, clear stale storage
+                        localStorage.removeItem('uniclarity_user');
+                        showSection('landing');
+                    }
+                } catch (err) {
+                    // Fallback if offline or server is waking up
+                    currentUser = JSON.parse(savedUser);
+                    setupAuthenticatedState();
+                }
             } else {
                 showSection('landing');
             }
@@ -872,28 +888,27 @@
         }
 
         function logout() {
-            // 1. Clear session variables and storage
+            // 1. Completely destroy stored session data
             currentUser = null;
             localStorage.removeItem('uniclarity_user');
             sessionStorage.clear();
 
-            // 2. Reset UI state & active records
+            // 2. Reset runtime records
             activeRecords = { complaints: [], appointments: [] };
 
-            // 3. Reset form inputs safely
+            // 3. Clear out input fields
             const loginId = document.getElementById('loginUserId');
             const loginPass = document.getElementById('loginPassword');
             if (loginId) loginId.value = '';
             if (loginPass) loginPass.value = '';
 
-            // 4. Switch back to landing page view and restore public header nav
-            showSection('landing');
-
-            // 5. Hide portal user badge and show unauthenticated auth buttons
+            // 4. Reset navigation and UI views back to the public landing page
             const unauth = document.getElementById('unauthActions');
             const userAct = document.getElementById('userActions');
             if (unauth) unauth.classList.remove('hidden');
             if (userAct) userAct.classList.add('hidden');
+
+            showSection('landing');
         }
 
         // Demo Fillers
