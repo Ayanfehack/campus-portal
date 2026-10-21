@@ -763,30 +763,40 @@
         // Login Submit
         async function handleLogin(e) {
             e.preventDefault();
+            const userIdVal = document.getElementById('loginUserId').value;
+            const passwordVal = document.getElementById('loginPassword').value;
+
             const payload = {
-                userId: document.getElementById('loginUserId').value,
-                password: document.getElementById('loginPassword').value
+                userId: userIdVal,
+                password: passwordVal
             };
+
             try {
                 const res = await fetch(`${API_URL}/login`, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify(payload)
                 });
+
                 const data = await res.json();
-                
-                if (res.ok) {
-                    // Overwrite stored user cleanly
+                console.log("Login Server Response:", data);
+
+                if (res.ok && data.user) {
+                    // Save user and update state cleanly
                     currentUser = data.user;
                     localStorage.setItem('uniclarity_user', JSON.stringify(currentUser));
                     
-                    // Render dashboard fresh
-                    renderDashboard();
+                    // Close login modal
+                    closeAuthModal();
+
+                    // Setup portal state & dashboard safely
+                    setupAuthenticatedState();
                 } else {
-                    alert(data.error || 'Invalid credentials.');
+                    alert(data.error || 'Invalid user ID or password.');
                 }
             } catch (err) {
-                alert('Server connection error.');
+                console.error("Login Handler JS Error:", err);
+                alert(`Authentication Error: ${err.message}`);
             }
         }
 
@@ -834,16 +844,29 @@
 
         // Auth State Setup
         function setupAuthenticatedState() {
+            if (!currentUser) return;
+
+            // Show authenticated header elements
             document.getElementById('unauthActions').classList.add('hidden');
             document.getElementById('userActions').classList.remove('hidden');
             
-            const initials = currentUser.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-            document.getElementById('userAvatar').innerText = initials;
-            document.getElementById('portalUserAvatar').innerText = initials;
-            document.getElementById('userNameNav').innerText = currentUser.fullName;
-            document.getElementById('portalUserName').innerText = currentUser.fullName;
-            document.getElementById('portalUserId').innerText = currentUser.userId;
+            // Calculate user initials safely
+            const fullName = currentUser.fullName || currentUser.user_id || 'User';
+            const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            
+            const navAvatar = document.getElementById('userAvatar');
+            const portalAvatar = document.getElementById('portalUserAvatar');
+            const navName = document.getElementById('userNameNav');
+            const portalName = document.getElementById('portalUserName');
+            const portalId = document.getElementById('portalUserId');
 
+            if (navAvatar) navAvatar.innerText = initials;
+            if (portalAvatar) portalAvatar.innerText = initials;
+            if (navName) navName.innerText = fullName;
+            if (portalName) portalName.innerText = fullName;
+            if (portalId) portalId.innerText = currentUser.userId || currentUser.user_id || '';
+
+            // Switch view from Landing to Portal
             showSection('portal');
             loadUserRecords();
         }
