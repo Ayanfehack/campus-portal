@@ -348,17 +348,13 @@ app.post('/api/admin/update-appointment', async (req, res) => {
     }
 });
 
-// SERVE FRONTEND PAGES
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html')); // Serves your landing page
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// CHANGE '/portal' TO '/portal.html' RIGHT HERE:
-app.get('/portal.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'portal.html')); // Serves your main app portal
+app.get('/portal', (req, res) => {
+    res.sendFile(path.join(__dirname, 'portal.html'));
 });
-
-// ----------------------------------------------------
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
