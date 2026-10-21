@@ -3,12 +3,13 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const fs = require('fs');
 if (!fs.existsSync('./uploads')) {
     fs.mkdirSync('./uploads');
 }
@@ -31,8 +32,6 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const nodemailer = require('nodemailer');
-
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -45,7 +44,7 @@ const transporter = nodemailer.createTransport({
 async function sendNotificationEmail(toEmail, subject, message) {
     try {
         await transporter.sendMail({
-            from: '"Campus Portal" <support@campus.edu.ng>',
+            from: '"UniClarity Support" <support@campus.edu.ng>',
             to: toEmail,
             subject: subject,
             text: message
@@ -75,37 +74,7 @@ async function initDb() {
             );
         `);
 
-        // Complaints Table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS complaints (
-                id VARCHAR(50) PRIMARY KEY,
-                student_id VARCHAR(100),
-                student_name VARCHAR(255),
-                student_department VARCHAR(255),
-                category VARCHAR(100),
-                type VARCHAR(100),
-                description TEXT,
-                status VARCHAR(50),
-                assigned_to VARCHAR(255),
-                feedback TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
-        // Appointments Table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS appointments (
-                id VARCHAR(50) PRIMARY KEY,
-                student_id VARCHAR(100),
-                student_name VARCHAR(255),
-                staff_department VARCHAR(255),
-                preferred_date VARCHAR(100),
-                reason TEXT,
-                status VARCHAR(50),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-
+        // Complaints Table (Consolidated with attachment support)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS complaints (
                 id VARCHAR(50) PRIMARY KEY,
@@ -119,6 +88,20 @@ async function initDb() {
                 assigned_to VARCHAR(255),
                 feedback TEXT,
                 attachment VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // Appointments Table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS appointments (
+                id VARCHAR(50) PRIMARY KEY,
+                student_id VARCHAR(100),
+                student_name VARCHAR(255),
+                staff_department VARCHAR(100),
+                preferred_date VARCHAR(100),
+                reason TEXT,
+                status VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
@@ -245,7 +228,7 @@ app.post('/api/appointments', async (req, res) => {
     try {
         await pool.query(
             `INSERT INTO appointments (id, student_id, student_name, staff_department, preferred_date, reason, status)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [apptId, studentId, studentName, staffDepartment, preferredDate, reason, 'Pending Approval']
         );
 
@@ -308,7 +291,6 @@ app.get('/api/admin-data', async (req, res) => {
 app.post('/api/admin/update-complaint', async (req, res) => {
     const { ticketId, status, feedback } = req.body;
     try {
-        // 1. Update the database
         const updateResult = await pool.query(
             'UPDATE complaints SET status = $1, feedback = $2 WHERE id = $3 RETURNING *',
             [status, feedback, ticketId]
@@ -316,17 +298,13 @@ app.post('/api/admin/update-complaint', async (req, res) => {
 
         if (updateResult.rows.length > 0) {
             const complaint = updateResult.rows[0];
-            
-            // 2. Fetch the student's email from the users table
             const userResult = await pool.query('SELECT email FROM users WHERE user_id = $1', [complaint.student_id]);
             
             if (userResult.rows.length > 0) {
                 const studentEmail = userResult.rows[0].email;
-                
-                // 3. Call the notification function here!
                 await sendNotificationEmail(
                     studentEmail, 
-                    `Ticket Update: [${ticketId}]`, 
+                    `UniClarity Ticket Update: [${ticketId}]`, 
                     `Your complaint status has been updated to: ${status}.\n\nFeedback: ${feedback}`
                 );
             }
@@ -373,7 +351,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT} with Role-Based Routing.`);
+    console.log(`UniClarity server running on port ${PORT}`);
 });
