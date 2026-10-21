@@ -9,7 +9,6 @@ const nodemailer = require('nodemailer');
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname)));
 
 if (!fs.existsSync('./uploads')) {
     fs.mkdirSync('./uploads');
@@ -350,10 +349,6 @@ app.post('/api/admin/update-appointment', async (req, res) => {
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/portal', (req, res) => {
-    res.sendFile(path.join(__dirname, 'portal.html'));
 });
 
 const PORT = process.env.PORT || 3000;

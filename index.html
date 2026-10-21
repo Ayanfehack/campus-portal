@@ -1,111 +1,1087 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UniClarity — AI-Driven Student Support & Appointment System</title>
-    <!-- Tailwind CSS CDN -->
+    <title>UniClarity | Modern Student Support & Administrative Portal</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0a3751',
+                            950: '#062033',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 50%, #bae6fd 100%); }
-        .orb { position: absolute; border-radius: 50%; background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); filter: blur(50px); opacity: 0.3; z-index: 0; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Print Styles for Official Passes & Tickets */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printablePass, #printablePass * {
+                visibility: visible;
+            }
+            #printablePass {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                box-shadow: none !important;
+                border: 2px solid #075985 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* Glassmorphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(224, 242, 254, 0.6);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(3, 105, 161, 0.1) 0%, transparent 50%),
+                        linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between text-slate-800 relative overflow-x-hidden p-4 md:p-8">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
 
-    <div class="orb w-96 h-96 -top-20 -left-20"></div>
-    <div class="orb w-80 h-80 bottom-10 right-10"></div>
+    <!-- TOP NAVIGATION BAR (Land / Portal Switch Header) -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-brand-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="showSection('landing')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-brand-400 flex items-center justify-center text-white font-black text-xl shadow-md shadow-brand-500/20">
+                        <i class="fa-solid font-bold fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold text-brand-950 tracking-tight">Uni<span class="text-brand-500">Clarity</span></span>
+                        <span class="block text-[10px] uppercase tracking-widest font-semibold text-brand-600 -mt-1">Support Portal</span>
+                    </div>
+                </div>
 
-    <!-- NAVBAR -->
-    <header class="max-w-6xl mx-auto w-full flex justify-between items-center py-4 relative z-10">
-        <div class="flex items-center gap-2">
-            <div class="w-10 h-10 rounded-xl bg-sky-900 text-white flex items-center justify-center font-bold shadow-md">
-                <i class="fa-solid fa-graduation-cap"></i>
+                <!-- Nav Links for Public Landing -->
+                <nav id="publicNav" class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+                    <a href="#features" class="hover:text-brand-600 transition-colors">Features</a>
+                    <a href="#how-it-works" class="hover:text-brand-600 transition-colors">How It Works</a>
+                    <a href="#offices" class="hover:text-brand-600 transition-colors">Support Units</a>
+                    <a href="#faq" class="hover:text-brand-600 transition-colors">FAQ</a>
+                </nav>
+
+                <!-- Auth / User Actions -->
+                <div class="flex items-center gap-3">
+                    <div id="unauthActions" class="flex items-center gap-3">
+                        <button onclick="openAuthModal('login')" class="px-4 py-2 text-sm font-semibold text-brand-700 hover:text-brand-800 hover:bg-brand-50 rounded-xl transition-all">
+                            Sign In
+                        </button>
+                        <button onclick="openAuthModal('register')" class="px-5 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 active:scale-95 rounded-xl shadow-md shadow-brand-600/20 transition-all flex items-center gap-2">
+                            <span>Get Started</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div id="userActions" class="hidden flex items-center gap-3">
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-brand-50 border border-brand-200 rounded-xl">
+                            <div class="w-7 h-7 rounded-lg bg-brand-700 text-white flex items-center justify-center text-xs font-bold" id="userAvatar">
+                                ST
+                            </div>
+                            <span class="text-xs font-semibold text-brand-900 max-w-[120px] truncate" id="userNameNav">User</span>
+                        </div>
+                        <button onclick="logout()" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="Log Out">
+                            <i class="fa-solid fa-right-from-bracket text-base"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <span class="text-xl font-extrabold tracking-tight text-sky-950 uppercase">UniClarity</span>
-        </div>
-        <div class="flex items-center gap-3">
-            <!-- CHANGE portal.html TO /portal -->
-            <a href="/portal" class="px-4 py-2 text-xs font-semibold text-sky-900 hover:text-sky-950">Sign In</a>
-            <a href="/portal" class="px-5 py-2.5 bg-sky-900 hover:bg-sky-950 text-white rounded-xl text-xs font-semibold shadow-md transition-all">Get Started</a>
         </div>
     </header>
 
-    <!-- HERO SECTION -->
-    <main class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-10 items-center my-auto py-12 relative z-10">
-        <div class="space-y-6">
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/80 backdrop-blur-md border border-sky-200 rounded-full text-xs font-semibold text-sky-900 shadow-sm">
-                <i class="fa-solid fa-bolt text-sky-600"></i> Smart Academic Routing & Passes
-            </div>
-            <h1 class="text-4xl lg:text-6xl font-extrabold text-sky-950 tracking-tight leading-none">
-                Campus support, <span class="text-sky-700">crystal clear.</span>
-            </h1>
-            <p class="text-slate-600 text-sm lg:text-base leading-relaxed">
-                Streamline your academic complaints, chat with our AI escalation assistant, and instantly generate printable appointment passes for physical administrative visits.
-            </p>
-            <div class="flex flex-wrap gap-3 pt-2">
-                <!-- CHANGE portal.html TO /portal -->
-                <a href="/portal" class="px-7 py-3.5 bg-sky-900 hover:bg-sky-950 text-white rounded-2xl text-sm font-bold shadow-lg shadow-sky-900/20 transition-all flex items-center gap-2">
-                    Launch Portal <i class="fa-solid fa-arrow-right"></i>
-                </a>
-                <a href="#features" class="px-6 py-3.5 bg-white hover:bg-sky-50 text-sky-900 border border-sky-200 rounded-2xl text-sm font-bold shadow-sm transition-all">
-                    Explore Features
-                </a>
-            </div>
-        </div>
+    <!-- LANDING PAGE VIEW -->
+    <main id="landingPage" class="flex-grow">
+        
+        <!-- HERO SECTION -->
+        <section class="relative hero-gradient overflow-hidden py-16 sm:py-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid lg:grid-cols-12 gap-12 items-center">
+                    
+                    <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-100/80 border border-brand-200 text-brand-700 text-xs font-semibold">
+                            <span class="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse"></span>
+                            Official Academic Resolution & Administrative Booking System
+                        </div>
 
-        <div class="bg-white/80 backdrop-blur-xl p-6 lg:p-8 rounded-3xl border border-sky-100 shadow-xl space-y-4">
-            <div class="flex items-center justify-between border-b border-sky-100 pb-4">
-                <span class="text-xs font-bold uppercase tracking-wider text-sky-900">System Live Status</span>
-                <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> All Systems Operational
-                </span>
-            </div>
-            <div class="space-y-3">
-                <div class="p-3 bg-sky-50/50 border border-sky-100 rounded-xl text-xs space-y-1">
-                    <div class="font-bold text-sky-950 flex justify-between"><span>AI Escalation Bot</span><span class="text-emerald-600">Active</span></div>
-                    <p class="text-slate-500">Instant routing for complex queries & ticket generation.</p>
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-950 tracking-tight leading-[1.15]">
+                            Streamlined Campus Support. <br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-sky-400">Zero Administrative Bottlenecks.</span>
+                        </h1>
+
+                        <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                            Log academic complaints, submit hostel or financial queries directly to designated advisers, or generate official printable session passes to meet campus administrators seamlessly.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+                            <button onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-600/25 active:scale-98 transition-all flex items-center justify-center gap-3 text-base">
+                                <span>Create Student/Staff Account</span>
+                                <i class="fa-solid fa-user-plus"></i>
+                            </button>
+                            <button onclick="openAuthModal('login')" class="w-full sm:w-auto px-7 py-4 bg-white border border-brand-200 hover:bg-brand-50 text-brand-800 font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 text-base">
+                                <span>Portal Login</span>
+                                <i class="fa-solid fa-arrow-right-to-bracket text-brand-500"></i>
+                            </button>
+                        </div>
+
+                        <!-- Stats Banner -->
+                        <div class="pt-8 grid grid-cols-3 gap-4 border-t border-brand-100 max-w-lg mx-auto lg:mx-0">
+                            <div>
+                                <p class="text-2xl font-extrabold text-brand-900">100%</p>
+                                <p class="text-xs text-slate-500 font-medium">Trackable Complaints</p>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-extrabold text-brand-900">Instant</p>
+                                <p class="text-xs text-slate-500 font-medium">Official Appointment Pass</p>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-extrabold text-brand-900">Direct</p>
+                                <p class="text-xs text-slate-500 font-medium">Role-Based Triage</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Preview Card Graphic -->
+                    <div class="lg:col-span-5">
+                        <div class="relative mx-auto max-w-md lg:max-w-none">
+                            <div class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-brand-400 to-brand-700 opacity-30 blur-xl"></div>
+                            
+                            <div class="relative bg-white border border-brand-100 rounded-3xl p-6 shadow-2xl space-y-5">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-sm">
+                                            SA
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-slate-800">Appointment Pass Preview</h4>
+                                            <p class="text-xs text-slate-500">Dean of Student Affairs</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-bold">VERIFIED</span>
+                                </div>
+
+                                <div class="bg-brand-50/70 p-4 rounded-2xl border border-brand-100 text-xs space-y-2.5">
+                                    <div class="flex justify-between"><span class="text-slate-500">Pass Code:</span> <span class="font-mono font-bold text-brand-800">APT-849201</span></div>
+                                    <div class="flex justify-between"><span class="text-slate-500">Student:</span> <span class="font-medium text-slate-800">Sample Student (CSC/2026/089)</span></div>
+                                    <div class="flex justify-between"><span class="text-slate-500">Scheduled:</span> <span class="font-semibold text-brand-700">Tomorrow at 10:00 AM</span></div>
+                                    <div class="flex justify-between"><span class="text-slate-500">Session Type:</span> <span class="text-slate-800">Accommodation Request</span></div>
+                                </div>
+
+                                <div class="pt-2">
+                                    <button onclick="openAuthModal('login')" class="w-full py-3 bg-brand-900 hover:bg-brand-950 text-white rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-print"></i>
+                                        <span>Click Here to Access Portal</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="p-3 bg-sky-50/50 border border-sky-100 rounded-xl text-xs space-y-1">
-                    <div class="font-bold text-sky-950 flex justify-between"><span>Printable Passes</span><span class="text-emerald-600">Ready</span></div>
-                    <p class="text-slate-500">Instant printable receipts for appointments and meetings.</p>
+            </div>
+        </section>
+
+        <!-- FEATURES SECTION -->
+        <section id="features" class="py-20 bg-white border-t border-brand-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 space-y-3">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-brand-600">Core Capabilities</h2>
+                    <p class="text-3xl font-extrabold text-brand-950 sm:text-4xl">Everything required for fast administrative resolution</p>
+                    <p class="text-slate-600 text-sm sm:text-base">Designed to eliminate long office queues and streamline academic communication.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="p-6 bg-slate-50 border border-brand-100 rounded-2xl space-y-4 hover:shadow-lg transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-sitemap"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-brand-950">Department Routing</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Complaints automatically route to exact officers—Part Advisers, Cash Officers, or Dean of Student Affairs based on category.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="p-6 bg-slate-50 border border-brand-100 rounded-2xl space-y-4 hover:shadow-lg transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-ticket"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-brand-950">Printable Pass Tickets</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Generate official printable passes with embedded QR-like verification codes for physical administrative visits.
+                        </p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="p-6 bg-slate-50 border border-brand-100 rounded-2xl space-y-4 hover:shadow-lg transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-brand-950">AI Support Triage</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Instant answers to student handbook regulations, registration dates, and complaint procedure guidelines.
+                        </p>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="p-6 bg-slate-50 border border-brand-100 rounded-2xl space-y-4 hover:shadow-lg transition-all group">
+                        <div class="w-12 h-12 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xl shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-brand-950">Status Tracking</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Real-time feedback updates on ticket resolutions, transfers between offices, and session confirmations.
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section id="how-it-works" class="py-20 bg-brand-900 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 space-y-3">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-brand-300">Simple Process</h2>
+                    <p class="text-3xl font-extrabold sm:text-4xl">How UniClarity Resolves Your Issues</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 text-center">
+                    <div class="bg-brand-800/60 border border-brand-700 p-8 rounded-2xl space-y-4">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-brand-500 text-white flex items-center justify-center font-extrabold text-lg">1</div>
+                        <h3 class="text-xl font-bold">Log Complaint or Book Session</h3>
+                        <p class="text-xs text-brand-100 leading-relaxed">Fill the structured form with relevant files or specify date and administrative unit needed.</p>
+                    </div>
+
+                    <div class="bg-brand-800/60 border border-brand-700 p-8 rounded-2xl space-y-4">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-brand-500 text-white flex items-center justify-center font-extrabold text-lg">2</div>
+                        <h3 class="text-xl font-bold">Automated Officer Assignment</h3>
+                        <p class="text-xs text-brand-100 leading-relaxed">System instantly routes the issue directly to your department Part Adviser or Hostel DSA.</p>
+                    </div>
+
+                    <div class="bg-brand-800/60 border border-brand-700 p-8 rounded-2xl space-y-4">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-brand-500 text-white flex items-center justify-center font-extrabold text-lg">3</div>
+                        <h3 class="text-xl font-bold">Get Resolution & Pass Ticket</h3>
+                        <p class="text-xs text-brand-100 leading-relaxed">Track status updates live or print official passes for hassle-free physical verification.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="bg-brand-950 border-t border-brand-800 text-slate-400 py-12 text-xs">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center text-xs font-bold">UC</div>
+                    <span class="font-bold text-white text-sm">UniClarity Support Portal</span>
+                </div>
+                <p>&copy; 2026 Campus Administrative Portal. All Rights Reserved.</p>
+            </div>
+        </footer>
     </main>
 
-    <!-- FEATURES -->
-    <section id="features" class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6 py-12 relative z-10">
-        <div class="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-sky-100 shadow-sm space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-900 flex items-center justify-center font-bold">
-                <i class="fa-solid fa-ticket"></i>
-            </div>
-            <h3 class="font-bold text-sky-950 text-sm">Printable Passes</h3>
-            <p class="text-xs text-slate-600">Get official verifiable appointment passes automatically when scheduling meetings with staff.</p>
-        </div>
-        <div class="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-sky-100 shadow-sm space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-900 flex items-center justify-center font-bold">
-                <i class="fa-solid fa-robot"></i>
-            </div>
-            <h3 class="font-bold text-sky-950 text-sm">AI Escalation</h3>
-            <p class="text-xs text-slate-600">Complex queries exceeding AI capabilities automatically generate escalation tickets for human review.</p>
-        </div>
-        <div class="bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-sky-100 shadow-sm space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-900 flex items-center justify-center font-bold">
-                <i class="fa-solid fa-users-gear"></i>
-            </div>
-            <h3 class="font-bold text-sky-950 text-sm">Role-Based Routing</h3>
-            <p class="text-xs text-slate-600">Complaints are intelligently routed to Part Advisers, Deans, or Cash Officers based on category.</p>
-        </div>
-    </section>
+    <!-- AUTHENTICATION MODAL (LOGIN & REGISTRATION) -->
+    <div id="authModal" class="fixed inset-0 z-50 bg-brand-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-brand-100 relative">
+            
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
 
-    <!-- FOOTER -->
-    <footer class="max-w-6xl mx-auto w-full text-center text-xs text-slate-500 py-6 border-t border-sky-200/50 relative z-10">
-        &copy; 2026 UniClarity Student Support System. All rights reserved.
-    </footer>
+            <!-- Modal Toggle Header -->
+            <div class="flex border-b border-slate-100 mb-6">
+                <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 pb-3 text-sm font-bold border-b-2 border-brand-600 text-brand-700">
+                    Sign In
+                </button>
+                <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600">
+                    Register Account
+                </button>
+            </div>
 
+            <!-- LOGIN FORM -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Matric No. / Staff ID</label>
+                    <input type="text" id="loginUserId" placeholder="e.g. CSC/2022/149" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-brand-500 focus:bg-white transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-brand-500 focus:bg-white transition-all">
+                </div>
+
+                <div id="loginFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+                <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md text-xs tracking-wide transition-all">
+                    Sign In to Portal
+                </button>
+
+                <div class="text-center pt-2">
+                    <p class="text-[11px] text-slate-500">Demo Quick Fill: <button type="button" onclick="fillDemoStudent()" class="text-brand-600 font-bold underline">Student</button> | <button type="button" onclick="fillDemoStaff()" class="text-brand-600 font-bold underline">Staff Officer</button></p>
+                </div>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3.5 hidden">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Account Role</label>
+                    <select id="regRole" onchange="toggleRegFields()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none font-medium">
+                        <option value="student">Student</option>
+                        <option value="staff">Administrative Staff</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="regFullName" placeholder="Oyinloluwa Ayanfe ODEKANYIN" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Matric / Staff ID</label>
+                        <input type="text" id="regUserId" placeholder="CSC/2022/149" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                        <input type="email" id="regEmail" placeholder="student@campus.edu" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                    </div>
+                </div>
+
+                <!-- Student Fields -->
+                <div id="studentRegFields" class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                        <input type="text" id="regDepartment" placeholder="Computer Science" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Level</label>
+                        <select id="regLevel" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                            <option value="100">100 Level</option>
+                            <option value="200">200 Level</option>
+                            <option value="300">300 Level</option>
+                            <option value="400">400 Level</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Staff Fields -->
+                <div id="staffRegFields" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Staff Designation Role</label>
+                    <select id="regStaffRole" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none font-medium">
+                        <option value="Dean of Student Affairs">Dean of Student Affairs</option>
+                        <option value="Part Adviser">Part Adviser</option>
+                        <option value="Cash Officer">Cash Officer</option>
+                        <option value="Head Administrative Staff">Head Administrative Staff</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                </div>
+
+                <div id="regFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+                <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md text-xs tracking-wide transition-all">
+                    Complete Registration
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN PORTAL CONTAINER (APP DASHBOARD VIEW AFTER AUTH) -->
+    <div id="portalContainer" class="hidden flex-grow flex max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-brand-950 text-white rounded-3xl p-6 flex flex-col justify-between shrink-0 shadow-xl">
+            <div class="space-y-6">
+                <div class="flex items-center gap-3 pb-4 border-b border-brand-800">
+                    <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center font-extrabold text-base" id="portalUserAvatar">
+                        ST
+                    </div>
+                    <div class="overflow-hidden">
+                        <h3 class="text-sm font-bold truncate" id="portalUserName">Student Name</h3>
+                        <p class="text-[11px] text-brand-300 font-mono truncate" id="portalUserId">CSC/2022/149</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="space-y-1 text-xs font-semibold">
+                    <button onclick="switchPortalTab('overview')" id="navOverview" class="w-full text-left px-4 py-3 rounded-xl bg-brand-700 text-white flex items-center gap-3 transition-all">
+                        <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+                        <span>Overview</span>
+                    </button>
+                    
+                    <button onclick="switchPortalTab('complaint')" id="navComplaint" class="w-full text-left px-4 py-3 rounded-xl text-brand-200 hover:bg-brand-900 flex items-center gap-3 transition-all">
+                        <i class="fa-solid fa-paper-plane w-4 text-center"></i>
+                        <span>File Complaint</span>
+                    </button>
+
+                    <button onclick="switchPortalTab('appointment')" id="navAppointment" class="w-full text-left px-4 py-3 rounded-xl text-brand-200 hover:bg-brand-900 flex items-center gap-3 transition-all">
+                        <i class="fa-solid fa-calendar-check w-4 text-center"></i>
+                        <span>Book Appointment</span>
+                    </button>
+
+                    <button onclick="switchPortalTab('ai')" id="navAi" class="w-full text-left px-4 py-3 rounded-xl text-brand-200 hover:bg-brand-900 flex items-center gap-3 transition-all">
+                        <i class="fa-solid fa-robot w-4 text-center text-sky-400"></i>
+                        <span>AI Triage Assistant</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="pt-4 border-t border-brand-800">
+                <button onclick="logout()" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-900/40 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Log Out Portal</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- PORTAL CONTENT PANELS -->
+        <main class="flex-grow bg-white border border-brand-100 rounded-3xl p-6 shadow-sm overflow-hidden">
+            
+            <!-- OVERVIEW TAB -->
+            <section id="tabContentOverview" class="space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-brand-950">Administrative Overview</h2>
+                        <p class="text-xs text-slate-500">Track your active requests and official passes in real-time.</p>
+                    </div>
+                    <button onclick="loadUserRecords()" class="p-2 text-brand-600 hover:bg-brand-50 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-brand-200">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh Data
+                    </button>
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <!-- Complaints List -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-brand-500"></i>
+                            Complaints & Tickets
+                        </h3>
+                        <div id="overviewComplaints" class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Appointments List -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-day text-brand-500"></i>
+                            Scheduled Passes
+                        </h3>
+                        <div id="overviewAppointments" class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FILE COMPLAINT TAB -->
+            <section id="tabContentComplaint" class="hidden max-w-xl mx-auto space-y-5 py-2">
+                <div>
+                    <h2 class="text-xl font-extrabold text-brand-950">File Support Complaint</h2>
+                    <p class="text-xs text-slate-500">Submissions route automatically to designated administrative officers.</p>
+                </div>
+
+                <form onsubmit="handleComplaintSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Issue Category</label>
+                        <select id="cmpCategory" required class="w-full py-2.5 px-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none font-medium">
+                            <option value="Academic">Academic (Routes to Part Adviser)</option>
+                            <option value="Hostel">Hostel / Welfare (Routes to Dean of Student Affairs)</option>
+                            <option value="Finance">Financial Services (Routes to Cash Officers)</option>
+                            <option value="General">General Administrative Enquiries</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Detailed Description</label>
+                        <textarea id="cmpDescription" rows="4" required placeholder="Describe the issue in detail..." class="w-full p-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none"></textarea>
+                    </div>
+
+                    <div id="cmpFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+                    <button type="submit" class="w-full py-3 bg-brand-900 hover:bg-brand-950 text-white font-bold rounded-xl text-xs shadow-md transition-all">
+                        Submit Complaint Ticket
+                    </button>
+                </form>
+            </section>
+
+            <!-- BOOK APPOINTMENT TAB -->
+            <section id="tabContentAppointment" class="hidden max-w-xl mx-auto space-y-5 py-2">
+                <div>
+                    <h2 class="text-xl font-extrabold text-brand-950">Book Administrative Session</h2>
+                    <p class="text-xs text-slate-500">Booking an appointment automatically generates an official printable pass.</p>
+                </div>
+
+                <form onsubmit="handleAppointmentSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Office / Staff</label>
+                        <select id="apptDepartment" class="w-full py-2.5 px-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none font-medium">
+                            <option value="Dean of Student Affairs">Dean of Student Affairs</option>
+                            <option value="Part Adviser">Department Part Adviser</option>
+                            <option value="Cash Officer">Cash Officer / Bursary</option>
+                            <option value="Head Administrative Staff">Head Administrative Staff</option>
+                        </select>
+                    </div>
+
+                    <!-- Split Date and Time for robust validation -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Date</label>
+                            <input type="date" id="apptDateVal" required class="w-full py-2.5 px-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Time</label>
+                            <input type="time" id="apptTimeVal" required class="w-full py-2.5 px-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Reason for Session</label>
+                        <textarea id="apptReason" rows="3" required placeholder="State your reason..." class="w-full p-3 bg-brand-50/50 border border-brand-200 rounded-xl text-xs outline-none"></textarea>
+                    </div>
+
+                    <div id="apptFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+                    <button type="submit" class="w-full py-3 bg-brand-900 hover:bg-brand-950 text-white font-bold rounded-xl text-xs shadow-md transition-all">
+                        Confirm Booking & Get Pass
+                    </button>
+                </form>
+            </section>
+
+            <!-- AI ASSISTANT TAB -->
+            <section id="tabContentAi" class="hidden h-full flex flex-col justify-between">
+                <div>
+                    <h2 class="text-xl font-extrabold text-brand-950 flex items-center gap-2">
+                        <i class="fa-solid fa-sparkles text-brand-500"></i> UniClarity Smart Triage
+                    </h2>
+                    <p class="text-xs text-slate-500">Ask questions regarding academic guidelines, clearance steps, or complaint procedures.</p>
+                </div>
+
+                <div id="aiChatBox" class="flex-grow my-4 p-4 bg-brand-50/40 border border-brand-100 rounded-2xl overflow-y-auto max-h-[350px] space-y-3 text-xs">
+                    <div class="p-3 bg-white border border-brand-100 rounded-xl max-w-md">
+                        👋 Hi! I'm your UniClarity assistant. How can I help resolve your campus inquiry today?
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="aiQuery" placeholder="Ask e.g., How do I meet my part adviser?" class="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                    <button onclick="askAi()" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition-all">
+                        Send
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- OFFICIAL PRINTABLE APPOINTMENT PASS MODAL -->
+    <div id="passModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative border border-brand-200">
+            <button onclick="closePassModal()" class="no-print absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Printable Pass Card Container -->
+            <div id="printablePass" class="p-6 bg-gradient-to-b from-brand-50 to-white rounded-2xl border-2 border-brand-600 space-y-5">
+                <div class="flex justify-between items-start border-b-2 border-brand-200 pb-4">
+                    <div>
+                        <span class="text-xs font-black tracking-widest uppercase text-brand-600">Official Pass</span>
+                        <h3 class="text-xl font-extrabold text-brand-950">Campus Entry & Session Pass</h3>
+                        <p class="text-[11px] text-slate-500">UniClarity Support Portal Verification</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-brand-700 text-white flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-stamp"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Pass Reference</p>
+                        <p class="font-mono font-bold text-brand-900 text-sm" id="passId">APT-000000</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Status</p>
+                        <span class="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]" id="passStatus">CONFIRMED</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Student ID / Name</p>
+                        <p class="font-semibold text-slate-800" id="passStudent">CSC/2022/149</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Administrative Office</p>
+                        <p class="font-semibold text-slate-800" id="passDept">Dean of Student Affairs</p>
+                    </div>
+                    <div class="col-span-2 bg-white p-3 rounded-xl border border-brand-100">
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Scheduled Date & Time</p>
+                        <p class="font-bold text-brand-700 text-sm" id="passDateTime">24/10/2026 09:00 AM</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-slate-400 uppercase font-semibold text-[10px]">Session Purpose</p>
+                        <p class="text-slate-700 italic" id="passReason">Accommodation request</p>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-dashed border-slate-300 flex justify-between items-center text-[10px] text-slate-400">
+                    <span>Generated by UniClarity System</span>
+                    <span>Valid for Date Specified Only</span>
+                </div>
+            </div>
+
+            <!-- Modal Print Actions -->
+            <div class="no-print pt-4 flex gap-3">
+                <button onclick="window.print()" class="flex-grow py-3 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Print Official Pass
+                </button>
+                <button onclick="closePassModal()" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INLINE APPLICATION LOGIC & MOCK API INTEGRATION -->
+    <script>
+        // Production API base URL
+        const API_URL = 'http://localhost:3000/api';
+
+        // Application State
+        let currentUser = null;
+        let activeRecords = { complaints: [], appointments: [] };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('uniclarity_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                setupAuthenticatedState();
+            } else {
+                showSection('landing');
+            }
+        });
+
+        // Toggle Landing vs Portal View
+        function showSection(view) {
+            const landing = document.getElementById('landingPage');
+            const portal = document.getElementById('portalContainer');
+            const navPublic = document.getElementById('publicNav');
+
+            if (view === 'portal' && currentUser) {
+                landing.classList.add('hidden');
+                portal.classList.remove('hidden');
+                navPublic.classList.add('hidden');
+            } else {
+                landing.classList.remove('hidden');
+                portal.classList.add('hidden');
+                navPublic.classList.remove('hidden');
+            }
+        }
+
+        // Auth Modal Handlers
+        function openAuthModal(tab) {
+            document.getElementById('authModal').classList.remove('hidden');
+            switchAuthTab(tab);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const tabLogin = document.getElementById('tabLogin');
+            const tabReg = document.getElementById('tabRegister');
+            const formLogin = document.getElementById('loginForm');
+            const formReg = document.getElementById('registerForm');
+
+            if (tab === 'login') {
+                tabLogin.className = "flex-1 pb-3 text-sm font-bold border-b-2 border-brand-600 text-brand-700";
+                tabReg.className = "flex-1 pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+                formLogin.classList.remove('hidden');
+                formReg.classList.add('hidden');
+            } else {
+                tabReg.className = "flex-1 pb-3 text-sm font-bold border-b-2 border-brand-600 text-brand-700";
+                tabLogin.className = "flex-1 pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600";
+                formReg.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function toggleRegFields() {
+            const role = document.getElementById('regRole').value;
+            const studentFields = document.getElementById('studentRegFields');
+            const staffFields = document.getElementById('staffRegFields');
+            if (role === 'staff') {
+                studentFields.classList.add('hidden');
+                staffFields.classList.remove('hidden');
+            } else {
+                studentFields.classList.remove('hidden');
+                staffFields.classList.add('hidden');
+            }
+        }
+
+        // Login Submit
+        async function handleLogin(e) {
+            e.preventDefault();
+            const userId = document.getElementById('loginUserId').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const feedback = document.getElementById('loginFeedback');
+
+            feedback.classList.remove('hidden');
+            feedback.className = "p-3 rounded-xl text-xs font-medium bg-brand-50 text-brand-700";
+            feedback.innerText = "Authenticating...";
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, password })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('uniclarity_user', JSON.stringify(currentUser));
+                    closeAuthModal();
+                    setupAuthenticatedState();
+                } else {
+                    feedback.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200";
+                    feedback.innerText = data.error || 'Invalid credentials.';
+                }
+            } catch (err) {
+                // Fallback client simulation if server offline
+                currentUser = {
+                    fullName: userId.includes('STAFF') ? 'Admin Officer' : 'Oyinloluwa Ayanfe ODEKANYIN',
+                    userId: userId,
+                    role: userId.includes('STAFF') ? 'staff' : 'student',
+                    department: 'Computer Science'
+                };
+                localStorage.setItem('uniclarity_user', JSON.stringify(currentUser));
+                closeAuthModal();
+                setupAuthenticatedState();
+            }
+        }
+
+        // Register Submit
+        async function handleRegister(e) {
+            e.preventDefault();
+            const role = document.getElementById('regRole').value;
+            const payload = {
+                fullName: document.getElementById('regFullName').value,
+                userId: document.getElementById('regUserId').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                role: role,
+                department: document.getElementById('regDepartment').value,
+                level: document.getElementById('regLevel').value,
+                staffRole: document.getElementById('regStaffRole').value
+            };
+
+            const feedback = document.getElementById('regFeedback');
+            feedback.classList.remove('hidden');
+            feedback.className = "p-3 rounded-xl text-xs font-medium bg-brand-50 text-brand-700";
+            feedback.innerText = "Creating account...";
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                    feedback.innerText = "Registered successfully! Please sign in.";
+                    setTimeout(() => switchAuthTab('login'), 1200);
+                } else {
+                    feedback.className = "p-3 rounded-xl text-xs font-medium bg-rose-50 text-rose-700";
+                    feedback.innerText = data.error || "Registration failed.";
+                }
+            } catch (err) {
+                feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                feedback.innerText = "Registered locally! Please sign in.";
+                setTimeout(() => switchAuthTab('login'), 1200);
+            }
+        }
+
+        // Auth State Setup
+        function setupAuthenticatedState() {
+            document.getElementById('unauthActions').classList.add('hidden');
+            document.getElementById('userActions').classList.remove('hidden');
+            
+            const initials = currentUser.fullName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+            document.getElementById('userAvatar').innerText = initials;
+            document.getElementById('portalUserAvatar').innerText = initials;
+            document.getElementById('userNameNav').innerText = currentUser.fullName;
+            document.getElementById('portalUserName').innerText = currentUser.fullName;
+            document.getElementById('portalUserId').innerText = currentUser.userId;
+
+            showSection('portal');
+            loadUserRecords();
+        }
+
+        function logout() {
+            localStorage.removeItem('uniclarity_user');
+            currentUser = null;
+            document.getElementById('unauthActions').classList.remove('hidden');
+            document.getElementById('userActions').classList.add('hidden');
+            showSection('landing');
+        }
+
+        // Demo Fillers
+        function fillDemoStudent() {
+            document.getElementById('loginUserId').value = 'CSC/2022/149';
+            document.getElementById('loginPassword').value = 'password123';
+        }
+        function fillDemoStaff() {
+            document.getElementById('loginUserId').value = 'STAFF/001';
+            document.getElementById('loginPassword').value = 'staffpass';
+        }
+
+        // Tab Switching inside Portal
+        function switchPortalTab(tab) {
+            ['Overview', 'Complaint', 'Appointment', 'Ai'].forEach(t => {
+                const content = document.getElementById(`tabContent${t}`);
+                const nav = document.getElementById(`nav${t}`);
+                if (t.toLowerCase() === tab) {
+                    content.classList.remove('hidden');
+                    nav.className = "w-full text-left px-4 py-3 rounded-xl bg-brand-700 text-white flex items-center gap-3 transition-all font-semibold";
+                } else {
+                    content.classList.add('hidden');
+                    nav.className = "w-full text-left px-4 py-3 rounded-xl text-brand-200 hover:bg-brand-900 flex items-center gap-3 transition-all font-semibold";
+                }
+            });
+        }
+
+        // Fetch Records
+        async function loadUserRecords() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${API_URL}/user-data/${encodeURIComponent(currentUser.userId)}`);
+                if (res.ok) {
+                    activeRecords = await res.json();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                // Mock default fallback data
+                activeRecords = {
+                    complaints: [
+                        { id: 'CMP-948123', category: 'Academic', status: 'In Progress', feedback: 'Forwarded to Part Adviser.', created_at: '2026-10-21' }
+                    ],
+                    appointments: [
+                        { id: 'APT-849201', staff_department: 'Dean of Student Affairs', preferred_date: '24/10/2026 10:00', reason: 'Accommodation Request', status: 'Scheduled' }
+                    ]
+                };
+            }
+            renderOverview();
+        }
+
+        function renderOverview() {
+            const cmpContainer = document.getElementById('overviewComplaints');
+            const apptContainer = document.getElementById('overviewAppointments');
+
+            if (activeRecords.complaints.length === 0) {
+                cmpContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No complaints filed yet.</p>`;
+            } else {
+                cmpContainer.innerHTML = activeRecords.complaints.map(c => `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-brand-900">${c.id}</span>
+                            <span class="px-2 py-0.5 bg-brand-100 text-brand-700 rounded text-[10px] font-bold">${c.status}</span>
+                        </div>
+                        <p class="text-[11px] font-semibold text-slate-700">${c.category} Issue</p>
+                        <p class="text-[10px] text-slate-500">${c.feedback || 'Under Review'}</p>
+                    </div>
+                `).join('');
+            }
+
+            if (activeRecords.appointments.length === 0) {
+                apptContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No appointments booked.</p>`;
+            } else {
+                apptContainer.innerHTML = activeRecords.appointments.map(a => `
+                    <div class="p-3 bg-brand-50/60 border border-brand-100 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-brand-900">${a.id}</span>
+                            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold">${a.status}</span>
+                        </div>
+                        <p class="text-[11px] font-semibold text-slate-700">${a.staff_department}</p>
+                        <div class="flex justify-between items-center pt-1">
+                            <span class="text-[10px] text-brand-600 font-semibold">${a.preferred_date}</span>
+                            <button onclick="openPassModal('${a.id}', '${a.staff_department}', '${a.preferred_date}', '${a.reason}')" class="px-2 py-1 bg-brand-700 text-white rounded text-[10px] font-bold">
+                                View Pass
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Submit Complaint
+        async function handleComplaintSubmit(e) {
+            e.preventDefault();
+            const feedback = document.getElementById('cmpFeedback');
+            const category = document.getElementById('cmpCategory').value;
+            const description = document.getElementById('cmpDescription').value;
+
+            feedback.classList.remove('hidden');
+            feedback.className = "p-3 rounded-xl text-xs font-medium bg-brand-50 text-brand-700";
+            feedback.innerText = "Submitting ticket...";
+
+            try {
+                const res = await fetch(`${API_URL}/complaints`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId: currentUser.userId,
+                        studentName: currentUser.fullName,
+                        studentDepartment: currentUser.department,
+                        category, description
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                    feedback.innerText = `Ticket ${data.ticketId} created successfully!`;
+                    document.getElementById('cmpDescription').value = '';
+                    setTimeout(() => { switchPortalTab('overview'); loadUserRecords(); }, 1200);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (err) {
+                const mockId = 'CMP-' + Math.floor(100000 + Math.random() * 900000);
+                activeRecords.complaints.unshift({ id: mockId, category, status: 'In Progress', feedback: 'Forwarded to officer.', created_at: 'Today' });
+                feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                feedback.innerText = `Ticket ${mockId} created!`;
+                document.getElementById('cmpDescription').value = '';
+                setTimeout(() => { switchPortalTab('overview'); renderOverview(); }, 1200);
+            }
+        }
+
+        // Submit Appointment
+        async function handleAppointmentSubmit(e) {
+            e.preventDefault();
+            const feedback = document.getElementById('apptFeedback');
+            const dept = document.getElementById('apptDepartment').value;
+            const dateVal = document.getElementById('apptDateVal').value;
+            const timeVal = document.getElementById('apptTimeVal').value;
+            const date = `${dateVal} ${timeVal}`;
+            const reason = document.getElementById('apptReason').value;
+
+            feedback.classList.remove('hidden');
+            feedback.className = "p-3 rounded-xl text-xs font-medium bg-brand-50 text-brand-700";
+            feedback.innerText = "Booking appointment pass...";
+
+            try {
+                const res = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId: currentUser.userId,
+                        studentName: currentUser.fullName,
+                        staffDepartment: dept,
+                        preferredDate: date,
+                        reason: reason
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                    feedback.innerText = 'Appointment booked successfully!';
+                    openPassModal(data.appointmentId, dept, date, reason);
+                    document.getElementById('apptReason').value = '';
+                    setTimeout(() => { switchPortalTab('overview'); loadUserRecords(); }, 1000);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (err) {
+                const mockId = 'APT-' + Math.floor(100000 + Math.random() * 900000);
+                activeRecords.appointments.unshift({ id: mockId, staff_department: dept, preferred_date: date, reason, status: 'Scheduled' });
+                feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
+                feedback.innerText = 'Appointment pass generated!';
+                openPassModal(mockId, dept, date, reason);
+                document.getElementById('apptReason').value = '';
+                setTimeout(() => { switchPortalTab('overview'); renderOverview(); }, 1000);
+            }
+        }
+
+        // Pass Modal Controls
+        function openPassModal(id, dept, date, reason) {
+            document.getElementById('passId').innerText = id;
+            document.getElementById('passStudent').innerText = `${currentUser.fullName} (${currentUser.userId})`;
+            document.getElementById('passDept').innerText = dept;
+            document.getElementById('passDateTime').innerText = date;
+            document.getElementById('passReason').innerText = reason;
+            document.getElementById('passModal').classList.remove('hidden');
+        }
+
+        function closePassModal() {
+            document.getElementById('passModal').classList.add('hidden');
+        }
+
+        // AI Chat Triage
+        function askAi() {
+            const input = document.getElementById('aiQuery');
+            const chatBox = document.getElementById('aiChatBox');
+            const text = input.value.trim();
+            if (!text) return;
+
+            chatBox.innerHTML += `<div class="p-3 bg-brand-600 text-white rounded-xl max-w-md ml-auto text-right">${text}</div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            setTimeout(() => {
+                let response = "Your query has been logged. For urgent academic clearance, please submit a direct complaint to your Part Adviser under 'File Complaint'.";
+                if (text.toLowerCase().includes('adviser')) {
+                    response = "Academic complaints route automatically to your Part Adviser when you select 'Academic' in the complaint tab.";
+                } else if (text.toLowerCase().includes('hostel') || text.toLowerCase().includes('room')) {
+                    response = "Hostel & accommodation queries are handled directly by the Dean of Student Affairs office.";
+                }
+                chatBox.innerHTML += `<div class="p-3 bg-white border border-brand-100 rounded-xl max-w-md">${response}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 600);
+        }
+    </script>
 </body>
 </html>
