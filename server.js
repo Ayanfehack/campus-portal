@@ -302,7 +302,9 @@ app.get('/api/appointments', async (req, res) => {
             queryParams = [userId];
         }
 
+        // ─── CHANGE 'db.query' TO 'pool.query' HERE (Line 260) ───
         const result = await pool.query(queryText, queryParams);
+        
         res.json({ success: true, appointments: result.rows });
     } catch (err) {
         console.error("Error fetching appointments:", err);
