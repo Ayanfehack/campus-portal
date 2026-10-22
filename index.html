@@ -938,13 +938,10 @@
 
         // Fetch Records
         async function loadUserRecords() {
-            // Safely grab the user from the correct localStorage key if currentUser isn't set yet
             let user = currentUser;
             if (!user || !user.userId) {
                 const saved = localStorage.getItem('uniclarity_user');
-                if (saved) {
-                    try { user = JSON.parse(saved); } catch(e) {}
-                }
+                if (saved) { try { user = JSON.parse(saved); } catch(e) {} }
             }
 
             if (!user || !user.userId) {
@@ -953,23 +950,33 @@
             }
 
             try {
-                // Fetch using the correct user data endpoint
-                const res = await fetch(`${API_URL}/user-data/${encodeURIComponent(user.userId)}`);
+                // Build the correct URL depending on whether they are staff/admin or a student
+                let url = `${API_URL}/complaints?userId=${encodeURIComponent(user.userId)}&role=${encodeURIComponent(user.role || 'student')}&department=${encodeURIComponent(user.department || 'All')}`;
+                
+                const res = await fetch(url);
                 const data = await res.json();
 
                 if (res.ok) {
                     activeRecords.complaints = data.complaints || [];
-                    activeRecords.appointments = data.appointments || [];
                     
-                    // Call your frontend rendering function to display them on the UI
+                    // Also fetch appointments for this user/department
+                    const aptRes = await fetch(`${API_URL}/appointments?userId=${encodeURIComponent(user.userId)}&role=${encodeURIComponent(user.role || 'student')}&department=${encodeURIComponent(user.department || 'All')}`);
+                    const aptData = await aptRes.json();
+                    if (aptRes.ok) {
+                        activeRecords.appointments = aptData.appointments || [];
+                    }
+
+                    // Refresh the UI overview dashboard
                     if (typeof renderOverview === 'function') {
                         renderOverview();
+                    } else if (typeof renderComplaintsList === 'function') {
+                        renderComplaintsList();
                     }
                 } else {
-                    console.error("Failed to load user records:", data.error);
+                    console.error("Failed to load records:", data.error);
                 }
             } catch (err) {
-                console.error("Error fetching user records:", err);
+                console.error("Error fetching records:", err);
             }
         }
 
