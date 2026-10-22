@@ -55,8 +55,7 @@ async function sendNotificationEmail(toEmail, subject, message) {
     }
 }
 
-// Initialize Database Tables
-// Initialize Database Tables & Auto-Migrate Missing Columns
+// Initialize Database Tables & Ensure All Required Columns Exist
 async function initDb() {
     try {
         // Users Table
@@ -93,7 +92,7 @@ async function initDb() {
             );
         `);
 
-        // Auto-add reply columns if they don't exist yet
+        // Safely add missing complaint response columns
         await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS reply TEXT;`);
         await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS replied_by VARCHAR(255);`);
         await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP;`);
@@ -113,15 +112,15 @@ async function initDb() {
             );
         `);
 
-        // Auto-add appointment scheduling columns if they don't exist yet
+        // Safely add missing appointment reschedule columns
         await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS date VARCHAR(100);`);
         await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS time VARCHAR(100);`);
         await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_note TEXT;`);
         await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;`);
 
-        console.log('PostgreSQL database tables and columns verified successfully.');
+        console.log('PostgreSQL database tables verified/created successfully.');
     } catch (err) {
-        console.error('Error initializing database tables:', err);
+        console.error('Error creating database tables:', err);
     }
 }
 
@@ -204,7 +203,7 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// 4. SUBMIT COMPLAINT (WITH CATEGORY ROUTING & FILE UPLOAD)
+// 4. SUBMIT COMPLAINT
 app.post('/api/complaints', upload.single('attachment'), async (req, res) => {
     const { studentId, studentName, studentDepartment, category, description } = req.body;
     const ticketId = 'CMP-' + Math.floor(100000 + Math.random() * 900000);
@@ -233,7 +232,7 @@ app.post('/api/complaints', upload.single('attachment'), async (req, res) => {
     }
 });
 
-// GET /api/complaints
+// GET COMPLAINTS (Supports both Students & Staff)
 app.get('/api/complaints', async (req, res) => {
     const { userId, role, department } = req.query;
 
@@ -243,21 +242,18 @@ app.get('/api/complaints', async (req, res) => {
 
         if (role === 'staff' || role === 'admin') {
             if (department && department !== 'All') {
-                // Use ILIKE for flexible matching
-                queryText = 'SELECT * FROM complaints WHERE department ILIKE $1 ORDER BY created_at DESC';
+                queryText = 'SELECT * FROM complaints WHERE student_department ILIKE $1 OR category ILIKE $1 OR assigned_to ILIKE $1 ORDER BY created_at DESC';
                 queryParams = [`%${department}%`];
             } else {
-                // If no specific department is set for staff, return all complaints so they don't miss anything
                 queryText = 'SELECT * FROM complaints ORDER BY created_at DESC';
                 queryParams = [];
             }
         } else {
-            // Fetch complaints logged by the specific student
             queryText = 'SELECT * FROM complaints WHERE student_id = $1 ORDER BY created_at DESC';
             queryParams = [userId];
         }
 
-        const result = await db.query(queryText, queryParams);
+        const result = await pool.query(queryText, queryParams);
         res.json({ success: true, complaints: result.rows });
     } catch (err) {
         console.error("Error fetching complaints:", err);
@@ -284,6 +280,7 @@ app.post('/api/appointments', async (req, res) => {
     }
 });
 
+// GET APPOINTMENTS
 app.get('/api/appointments', async (req, res) => {
     const { userId, role, department } = req.query;
 
@@ -293,20 +290,18 @@ app.get('/api/appointments', async (req, res) => {
 
         if (role === 'staff' || role === 'admin') {
             if (department && department !== 'All') {
-                queryText = 'SELECT * FROM appointments WHERE department ILIKE $1 ORDER BY created_at DESC';
+                queryText = 'SELECT * FROM appointments WHERE staff_department ILIKE $1 ORDER BY created_at DESC';
                 queryParams = [`%${department}%`];
             } else {
-                // Show all appointments to staff if department isn't restricted
                 queryText = 'SELECT * FROM appointments ORDER BY created_at DESC';
                 queryParams = [];
             }
         } else {
-            // Fetch appointments booked by the specific student
             queryText = 'SELECT * FROM appointments WHERE student_id = $1 ORDER BY created_at DESC';
             queryParams = [userId];
         }
 
-        const result = await db.query(queryText, queryParams);
+        const result = await pool.query(queryText, queryParams);
         res.json({ success: true, appointments: result.rows });
     } catch (err) {
         console.error("Error fetching appointments:", err);
@@ -362,96 +357,7 @@ app.get('/api/admin-data', async (req, res) => {
     }
 });
 
-// 8. UPDATE COMPLAINT STATUS
-app.post('/api/admin/update-complaint', async (req, res) => {
-    const { ticketId, status, feedback } = req.body;
-    try {
-        const updateResult = await pool.query(
-            'UPDATE complaints SET status = $1, feedback = $2 WHERE id = $3 RETURNING *',
-            [status, feedback, ticketId]
-        );
-
-        if (updateResult.rows.length > 0) {
-            const complaint = updateResult.rows[0];
-            const userResult = await pool.query('SELECT email FROM users WHERE user_id = $1', [complaint.student_id]);
-            
-            if (userResult.rows.length > 0) {
-                const studentEmail = userResult.rows[0].email;
-                await sendNotificationEmail(
-                    studentEmail, 
-                    `UniClarity Ticket Update: [${ticketId}]`, 
-                    `Your complaint status has been updated to: ${status}.\n\nFeedback: ${feedback}`
-                );
-            }
-        }
-
-        res.json({ success: true, message: 'Complaint updated successfully!' });
-    } catch (err) {
-        console.error('Update Error:', err);
-        res.status(500).json({ error: 'Failed to update complaint.' });
-    }
-});
-
-// 9. RE-ASSIGN / TRANSFER COMPLAINT TICKET TO ANOTHER STAFF ROLE
-app.post('/api/admin/transfer-complaint', async (req, res) => {
-    const { ticketId, newAssignee, transferReason } = req.body;
-    try {
-        await pool.query(
-            'UPDATE complaints SET assigned_to = $1, feedback = $2 WHERE id = $3',
-            [newAssignee, `Transferred to ${newAssignee}: ${transferReason}`, ticketId]
-        );
-        res.json({ success: true, message: 'Ticket transferred successfully!' });
-    } catch (err) {
-        console.error('Transfer Error:', err);
-        res.status(500).json({ error: 'Failed to transfer ticket.' });
-    }
-});
-
-// 10. UPDATE APPOINTMENT STATUS (APPROVE / DECLINE / RESCHEDULE)
-// ==========================================
-// APPOINTMENTS: Accept or Reschedule
-// ==========================================
-app.post('/api/admin/update-appointment', async (req, res) => {
-    const { appointmentId, status, newDate, newTime, staffNote } = req.body;
-
-    try {
-        let query = '';
-        let params = [];
-
-        if (status === 'Rescheduled') {
-            query = `
-                UPDATE appointments 
-                SET status = $1, date = $2, time = $3, staff_note = $4, updated_at = NOW() 
-                WHERE id = $5 RETURNING *;
-            `;
-            params = [status, newDate, newTime, staffNote || 'Rescheduled by staff', appointmentId];
-        } else {
-            // Accepted or Rejected
-            query = `
-                UPDATE appointments 
-                SET status = $1, staff_note = $2, updated_at = NOW() 
-                WHERE id = $3 RETURNING *;
-            `;
-            params = [status, staffNote || `Appointment ${status.toLowerCase()}`, appointmentId];
-        }
-
-        const result = await db.query(query, params);
-        
-        if (result.rowCount === 0) {
-            return res.status(404).json({ error: "Appointment not found." });
-        }
-
-        res.json({ success: true, appointment: result.rows[0] });
-    } catch (err) {
-        console.error("Error updating appointment:", err);
-        res.status(500).json({ error: "Failed to update appointment." });
-    }
-});
-
-
-// ==========================================
-// COMPLAINTS: Reply & Update Status
-// ==========================================
+// 8. STAFF REPLY TO COMPLAINT
 app.post('/api/admin/reply-complaint', async (req, res) => {
     const { complaintId, replyText, status, repliedBy } = req.body;
 
@@ -468,7 +374,7 @@ app.post('/api/admin/reply-complaint', async (req, res) => {
         `;
         const params = [replyText, status || 'Resolved', repliedBy, complaintId];
         
-        const result = await db.query(query, params);
+        const result = await pool.query(query, params);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "Complaint not found." });
@@ -481,9 +387,45 @@ app.post('/api/admin/reply-complaint', async (req, res) => {
     }
 });
 
-const { GoogleGenAI } = require('@google/genai');
+// 9. STAFF ACCEPT / RESCHEDULE APPOINTMENT
+app.post('/api/admin/update-appointment', async (req, res) => {
+    const { appointmentId, status, newDate, newTime, staffNote } = req.body;
 
-// Initialize Gemini with your environment variable
+    try {
+        let query = '';
+        let params = [];
+
+        if (status === 'Rescheduled') {
+            query = `
+                UPDATE appointments 
+                SET status = $1, date = $2, time = $3, staff_note = $4, updated_at = NOW() 
+                WHERE id = $5 RETURNING *;
+            `;
+            params = [status, newDate, newTime, staffNote || 'Rescheduled by staff', appointmentId];
+        } else {
+            query = `
+                UPDATE appointments 
+                SET status = $1, staff_note = $2, updated_at = NOW() 
+                WHERE id = $3 RETURNING *;
+            `;
+            params = [status, staffNote || `Appointment ${status.toLowerCase()}`, appointmentId];
+        }
+
+        const result = await pool.query(query, params);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Appointment not found." });
+        }
+
+        res.json({ success: true, appointment: result.rows[0] });
+    } catch (err) {
+        console.error("Error updating appointment:", err);
+        res.status(500).json({ error: "Failed to update appointment." });
+    }
+});
+
+// 10. AI ASSISTANT CHAT ROUTE (Google Gemini)
+const { GoogleGenAI } = require('@google/genai');
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.post('/api/chat', async (req, res) => {
