@@ -253,8 +253,9 @@ app.get('/api/complaints', async (req, res) => {
             queryParams = [userId];
         }
 
-        // Change 'db.query' to 'pool.query' here:
+        // ─── CHANGE 'db.query' TO 'pool.query' HERE ───
         const result = await pool.query(queryText, queryParams);
+        
         res.json({ success: true, complaints: result.rows });
     } catch (err) {
         console.error("Error fetching complaints:", err);
