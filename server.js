@@ -220,6 +220,32 @@ app.post('/api/complaints', upload.single('attachment'), async (req, res) => {
     }
 });
 
+// GET /api/complaints
+app.get('/api/complaints', async (req, res) => {
+    const { userId, role, department } = req.query;
+
+    try {
+        let queryText = '';
+        let queryParams = [];
+
+        if (role === 'staff') {
+            // Fetch complaints assigned to staff's department or addressed to staff
+            queryText = 'SELECT * FROM complaints WHERE department = $1 OR assigned_to = $2 ORDER BY created_at DESC';
+            queryParams = [department, userId];
+        } else {
+            // Fetch complaints logged by the specific student
+            queryText = 'SELECT * FROM complaints WHERE student_id = $1 ORDER BY created_at DESC';
+            queryParams = [userId];
+        }
+
+        const result = await db.query(queryText, queryParams);
+        res.json({ success: true, complaints: result.rows });
+    } catch (err) {
+        console.error("Error fetching complaints:", err);
+        res.status(500).json({ error: "Failed to load complaints" });
+    }
+});
+
 // 5. BOOK APPOINTMENT
 app.post('/api/appointments', async (req, res) => {
     const { studentId, studentName, staffDepartment, preferredDate, reason } = req.body;
@@ -333,17 +359,76 @@ app.post('/api/admin/transfer-complaint', async (req, res) => {
 });
 
 // 10. UPDATE APPOINTMENT STATUS (APPROVE / DECLINE / RESCHEDULE)
+// ==========================================
+// APPOINTMENTS: Accept or Reschedule
+// ==========================================
 app.post('/api/admin/update-appointment', async (req, res) => {
-    const { appointmentId, status, notes } = req.body;
+    const { appointmentId, status, newDate, newTime, staffNote } = req.body;
+
     try {
-        await pool.query(
-            'UPDATE appointments SET status = $1, reason = reason || $2 WHERE id = $3',
-            [status, ` | Admin Note: ${notes}`, appointmentId]
-        );
-        res.json({ success: true, message: 'Appointment status updated!' });
+        let query = '';
+        let params = [];
+
+        if (status === 'Rescheduled') {
+            query = `
+                UPDATE appointments 
+                SET status = $1, date = $2, time = $3, staff_note = $4, updated_at = NOW() 
+                WHERE id = $5 RETURNING *;
+            `;
+            params = [status, newDate, newTime, staffNote || 'Rescheduled by staff', appointmentId];
+        } else {
+            // Accepted or Rejected
+            query = `
+                UPDATE appointments 
+                SET status = $1, staff_note = $2, updated_at = NOW() 
+                WHERE id = $3 RETURNING *;
+            `;
+            params = [status, staffNote || `Appointment ${status.toLowerCase()}`, appointmentId];
+        }
+
+        const result = await db.query(query, params);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Appointment not found." });
+        }
+
+        res.json({ success: true, appointment: result.rows[0] });
     } catch (err) {
-        console.error('Appointment Update Error:', err);
-        res.status(500).json({ error: 'Failed to update appointment.' });
+        console.error("Error updating appointment:", err);
+        res.status(500).json({ error: "Failed to update appointment." });
+    }
+});
+
+
+// ==========================================
+// COMPLAINTS: Reply & Update Status
+// ==========================================
+app.post('/api/admin/reply-complaint', async (req, res) => {
+    const { complaintId, replyText, status, repliedBy } = req.body;
+
+    try {
+        const query = `
+            UPDATE complaints 
+            SET reply = $1, 
+                status = $2, 
+                replied_by = $3, 
+                replied_at = NOW(), 
+                updated_at = NOW() 
+            WHERE id = $4 
+            RETURNING *;
+        `;
+        const params = [replyText, status || 'Resolved', repliedBy, complaintId];
+        
+        const result = await db.query(query, params);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Complaint not found." });
+        }
+
+        res.json({ success: true, complaint: result.rows[0] });
+    } catch (err) {
+        console.error("Error replying to complaint:", err);
+        res.status(500).json({ error: "Failed to send reply." });
     }
 });
 

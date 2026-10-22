@@ -939,25 +939,49 @@
         // Fetch Records
         async function loadUserRecords() {
             if (!currentUser) return;
+
             try {
-                const res = await fetch(`${API_URL}/user-data/${encodeURIComponent(currentUser.userId)}`);
+                // Build request URL with user parameters
+                const url = `${API_URL}/complaints?userId=${encodeURIComponent(currentUser.userId)}&role=${encodeURIComponent(currentUser.role)}&department=${encodeURIComponent(currentUser.department || '')}`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+
                 if (res.ok) {
-                    activeRecords = await res.json();
+                    activeRecords.complaints = data.complaints || [];
+                    renderComplaintsList();
                 } else {
-                    throw new Error();
+                    console.error("Failed to fetch complaints:", data.error);
                 }
             } catch (err) {
-                // Mock default fallback data
-                activeRecords = {
-                    complaints: [
-                        { id: 'CMP-948123', category: 'Academic', status: 'In Progress', feedback: 'Forwarded to Part Adviser.', created_at: '2026-10-21' }
-                    ],
-                    appointments: [
-                        { id: 'APT-849201', staff_department: 'Dean of Student Affairs', preferred_date: '24/10/2026 10:00', reason: 'Accommodation Request', status: 'Scheduled' }
-                    ]
-                };
+                console.error("Error loading user records:", err);
             }
-            renderOverview();
+        }
+
+        function renderComplaintsList() {
+            const container = document.getElementById('complaintsListContainer');
+            if (!container) return;
+
+            if (activeRecords.complaints.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No complaints recorded yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = activeRecords.complaints.map(item => `
+                <div class="p-4 border rounded-xl bg-white shadow-sm space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-slate-800 text-sm">${item.subject || item.title}</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                            item.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }">${item.status || 'Pending'}</span>
+                    </div>
+                    <p class="text-xs text-slate-600">${item.description}</p>
+                    <div class="text-[11px] text-slate-400 flex justify-between pt-2 border-t">
+                        <span>Submitted by: ${item.student_id || item.studentId}</span>
+                        <span>Dept: ${item.department}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderOverview() {
@@ -1123,6 +1147,263 @@
                 chatBox.innerHTML += `<div class="p-3 bg-white border border-brand-100 rounded-xl max-w-md">${response}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             }, 600);
+        }
+
+        function triggerQuickComplaint(department, defaultSubject) {
+            // Open your existing complaint modal/form view
+            if (typeof openComplaintModal === 'function') {
+                openComplaintModal();
+            } else {
+                showSection('complaints'); // Or your modal toggle function
+            }
+
+            // Pre-fill the department and subject fields if they exist on your page
+            const deptSelect = document.getElementById('complaintDepartment');
+            const subjectInput = document.getElementById('complaintSubject');
+
+            if (deptSelect) deptSelect.value = department;
+            if (subjectInput) subjectInput.value = defaultSubject;
+        }
+
+        function appendChatMessage(sender, responseObj) {
+            const chatContainer = document.getElementById('chatMessagesContainer'); // Adjust to your actual chat container ID
+            if (!chatContainer) return;
+
+            const isUser = sender === 'user';
+            const messageText = typeof responseObj === 'string' ? responseObj : responseObj.text;
+            const action = typeof responseObj === 'object' ? responseObj.action : null;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex flex-col ${isUser ? 'items-end' : 'items-start'} my-2`;
+
+            let htmlContent = `
+                <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-xs ${
+                    isUser ? 'bg-blue-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'
+                }">
+                    ${messageText}
+                </div>
+            `;
+
+            // If there's an automated ticket action attached, add a quick-action button!
+            if (action) {
+                htmlContent += `
+                    <button onclick="triggerQuickComplaint('${action.dept}', '${action.subject}')" 
+                        class="mt-2 text-xs bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        <i class="fas fa-ticket-alt"></i> ${action.label}
+                    </button>
+                `;
+            }
+
+            messageDiv.innerHTML = htmlContent;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+                // RENDER APPOINTMENTS (Staff View)
+        function renderStaffAppointments() {
+            const container = document.getElementById('staffAppointmentsContainer');
+            if (!container) return;
+
+            if (activeRecords.appointments.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No appointment requests.</p>`;
+                return;
+            }
+
+            container.innerHTML = activeRecords.appointments.map(item => `
+                <div class="p-4 border rounded-xl bg-white shadow-sm space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold text-slate-800 text-sm">${item.purpose || 'Appointment Request'}</h4>
+                            <p class="text-xs text-slate-500">Student: ${item.student_name || item.student_id}</p>
+                        </div>
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${
+                            item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
+                            item.status === 'Rescheduled' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
+                        }">${item.status || 'Pending'}</span>
+                    </div>
+
+                    <div class="text-xs bg-slate-50 p-2.5 rounded-lg text-slate-600">
+                        <p><strong>Date:</strong> ${item.date} | <strong>Time:</strong> ${item.time}</p>
+                        ${item.staff_note ? `<p class="mt-1 text-amber-800"><strong>Staff Note:</strong> ${item.staff_note}</p>` : ''}
+                    </div>
+
+                    <!-- Staff Controls -->
+                    <div class="flex gap-2 pt-2 border-t">
+                        <button onclick="handleAppointmentAction('${item.id}', 'Accepted')" 
+                            class="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg">
+                            Accept
+                        </button>
+                        <button onclick="openRescheduleModal('${item.id}')" 
+                            class="px-3 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg">
+                            Reschedule
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // RENDER COMPLAINTS (Staff View with Reply Box)
+        function renderStaffComplaints() {
+            const container = document.getElementById('staffComplaintsContainer');
+            if (!container) return;
+
+            if (activeRecords.complaints.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No pending complaints.</p>`;
+                return;
+            }
+
+            container.innerHTML = activeRecords.complaints.map(item => `
+                <div class="p-4 border rounded-xl bg-white shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-slate-800 text-sm">${item.subject}</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                            item.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }">${item.status || 'Pending'}</span>
+                    </div>
+
+                    <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg">${item.description}</p>
+                    <p class="text-[11px] text-slate-400">Submitted by: ${item.student_id}</p>
+
+                    ${item.reply ? `
+                        <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-xs text-blue-900">
+                            <strong>Your Reply:</strong> ${item.reply}
+                        </div>
+                    ` : `
+                        <!-- Reply Form for Staff -->
+                        <div class="pt-2 border-t space-y-2">
+                            <textarea id="replyText_${item.id}" rows="2" placeholder="Write official response to student..." 
+                                class="w-full text-xs p-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+                            <button onclick="submitComplaintReply('${item.id}')" 
+                                class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
+                                Send Reply & Resolve
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `).join('');
+        }
+
+                // Submit Staff Complaint Reply
+        async function submitComplaintReply(complaintId) {
+            const replyInput = document.getElementById(`replyText_${complaintId}`);
+            const replyText = replyInput ? replyInput.value.trim() : '';
+
+            if (!replyText) {
+                alert("Please enter a reply message before submitting.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/admin/reply-complaint`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        complaintId: complaintId,
+                        replyText: replyText,
+                        status: 'Resolved',
+                        repliedBy: currentUser.fullName || currentUser.role
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert("Reply sent successfully!");
+                    loadUserRecords(); // Refresh data
+                } else {
+                    alert(data.error || "Failed to send reply.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Connection error.");
+            }
+        }
+
+        // Handle Appointment Accept / Reschedule
+        async function handleAppointmentAction(appointmentId, status, newDate = null, newTime = null, staffNote = '') {
+            try {
+                const res = await fetch(`${API_URL}/admin/update-appointment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        appointmentId,
+                        status,
+                        newDate,
+                        newTime,
+                        staffNote
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`Appointment updated to ${status}.`);
+                    loadUserRecords();
+                } else {
+                    alert(data.error || "Update failed.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Connection error.");
+            }
+        }
+
+        // Quick Prompt for Rescheduling
+        function openRescheduleModal(appointmentId) {
+            const newDate = prompt("Enter new date (YYYY-MM-DD):");
+            if (!newDate) return;
+            
+            const newTime = prompt("Enter new time (e.g., 10:00 AM):");
+            if (!newTime) return;
+
+            const note = prompt("Reason / note for student (optional):");
+
+            handleAppointmentAction(appointmentId, 'Rescheduled', newDate, newTime, note || 'Appointment rescheduled by staff.');
+        }
+
+        async function handleAssistantMessage(userText) {
+            // Render the student's message in the chat box
+            appendChatMessage('user', userText);
+
+            // Get the response based on the automated routing rules
+            const aiResponse = generateAIResponse(userText);
+
+            // Render the assistant's reply
+            setTimeout(() => {
+                appendChatMessage('assistant', aiResponse);
+            }, 400); // Slight delay for a natural feel
+        }
+
+       function generateAIResponse(userMessage) {
+            const lowerMsg = userMessage.toLowerCase();
+
+            // 1. Check for "result" keyword -> Route to Part Adviser
+            if (lowerMsg.includes('result')) {
+                return {
+                    text: "For queries or issues regarding your academic results, please contact your Part Adviser directly. Would you like to file an official complaint to your Part Adviser now?",
+                    action: { label: "File Complaint to Part Adviser", dept: "Part Adviser", subject: "Academic Result Inquiry" }
+                };
+            }
+
+            // 2. Check for "hostel" keyword -> Route to Dean of Student Affairs
+            if (lowerMsg.includes('hostel')) {
+                return {
+                    text: "For all matters concerning hostel allocation, maintenance, or accommodation issues, please direct your inquiry to the Dean of Student Affairs (DSA). Would you like to file a complaint?",
+                    action: { label: "File Complaint to DSA", dept: "Dean of Student Affairs", subject: "Hostel / Accommodation Issue" }
+                };
+            }
+
+            // 3. Check for portal access / password issues
+            if (lowerMsg.includes("can't access") || lowerMsg.includes("cannot access") || lowerMsg.includes("access my portal") || lowerMsg.includes("cant access")) {
+                return {
+                    text: "If you are having trouble accessing your portal, please click on the 'Forgot Password' link on the sign-in page and check your official student email for the password reset link.",
+                    action: null
+                };
+            }
+
+            // Fallback for general AI inquiries
+            return {
+                text: "How else can I assist you with your campus administrative needs today?",
+                action: null
+            };
         }
     </script>
 </body>
