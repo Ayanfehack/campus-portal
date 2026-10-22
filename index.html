@@ -1069,25 +1069,30 @@
                         studentId: currentUser.userId,
                         studentName: currentUser.fullName,
                         studentDepartment: currentUser.department,
-                        category, description
+                        category, 
+                        description
                     })
                 });
+                
                 const data = await res.json();
+                
                 if (res.ok) {
                     feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
                     feedback.innerText = `Ticket ${data.ticketId} created successfully!`;
                     document.getElementById('cmpDescription').value = '';
-                    setTimeout(() => { switchPortalTab('overview'); loadUserRecords(); }, 1200);
+                    
+                    // Immediately reload records from the backend database so it renders properly
+                    setTimeout(() => { 
+                        switchPortalTab('overview'); 
+                        if (typeof loadUserRecords === 'function') loadUserRecords(); 
+                    }, 1200);
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || "Failed to create ticket");
                 }
             } catch (err) {
-                const mockId = 'CMP-' + Math.floor(100000 + Math.random() * 900000);
-                activeRecords.complaints.unshift({ id: mockId, category, status: 'In Progress', feedback: 'Forwarded to officer.', created_at: 'Today' });
-                feedback.className = "p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-700";
-                feedback.innerText = `Ticket ${mockId} created!`;
-                document.getElementById('cmpDescription').value = '';
-                setTimeout(() => { switchPortalTab('overview'); renderOverview(); }, 1200);
+                console.error("Complaint submission error:", err);
+                feedback.className = "p-3 rounded-xl text-xs font-medium bg-red-50 text-red-700";
+                feedback.innerText = `Error: ${err.message || "Could not submit complaint."}`;
             }
         }
 

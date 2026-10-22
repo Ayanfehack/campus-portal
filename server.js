@@ -203,11 +203,10 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// 4. SUBMIT COMPLAINT
-app.post('/api/complaints', upload.single('attachment'), async (req, res) => {
+// 4. SUBMIT COMPLAINT (JSON compatible)
+app.post('/api/complaints', async (req, res) => {
     const { studentId, studentName, studentDepartment, category, description } = req.body;
     const ticketId = 'CMP-' + Math.floor(100000 + Math.random() * 900000);
-    const attachmentFile = req.file ? req.file.filename : null;
 
     let assignedTo = 'Head Administrative Staff';
     if (category === 'Academic') {
@@ -220,9 +219,9 @@ app.post('/api/complaints', upload.single('attachment'), async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO complaints (id, student_id, student_name, student_department, category, type, description, status, assigned_to, feedback, attachment)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-            [ticketId, studentId, studentName, studentDepartment, category, 'Escalated Ticket', description, 'In Progress', assignedTo, 'Forwarded to designated officer.', attachmentFile]
+            `INSERT INTO complaints (id, student_id, student_name, student_department, category, type, description, status, assigned_to, feedback)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [ticketId, studentId, studentName, studentDepartment, category, 'Escalated Ticket', description, 'In Progress', assignedTo, 'Forwarded to designated officer.']
         );
 
         res.status(201).json({ success: true, ticketId, assignedTo });
