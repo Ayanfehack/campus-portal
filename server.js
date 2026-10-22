@@ -232,6 +232,7 @@ app.post('/api/complaints', async (req, res) => {
 });
 
 // GET COMPLAINTS (Supports both Students & Staff)
+// GET COMPLAINTS (Supports both Students & Staff with Safe Fallbacks)
 app.get('/api/complaints', async (req, res) => {
     const { userId, role, department } = req.query;
 
@@ -239,22 +240,25 @@ app.get('/api/complaints', async (req, res) => {
         let queryText = '';
         let queryParams = [];
 
-        if (role === 'staff' || role === 'admin') {
-            if (department && department !== 'All') {
-                queryText = 'SELECT * FROM complaints WHERE student_department ILIKE $1 OR category ILIKE $1 OR assigned_to ILIKE $1 ORDER BY created_at DESC';
-                queryParams = [`%${department}%`];
+        // Check if user is staff/admin and requesting department records
+        if ((role === 'staff' || role === 'admin') && department && department !== 'All') {
+            queryText = 'SELECT * FROM complaints WHERE student_department ILIKE $1 OR category ILIKE $1 OR assigned_to ILIKE $1 ORDER BY created_at DESC';
+            queryParams = [`%${department}%`];
+        } else if (role === 'staff' || role === 'admin') {
+            queryText = 'SELECT * FROM complaints ORDER BY created_at DESC';
+            queryParams = [];
+        } else {
+            // Student view: fetch strictly by student_id, with a safe fallback to all records if userId is missing
+            if (userId) {
+                queryText = 'SELECT * FROM complaints WHERE student_id = $1 ORDER BY created_at DESC';
+                queryParams = [userId];
             } else {
                 queryText = 'SELECT * FROM complaints ORDER BY created_at DESC';
                 queryParams = [];
             }
-        } else {
-            queryText = 'SELECT * FROM complaints WHERE student_id = $1 ORDER BY created_at DESC';
-            queryParams = [userId];
         }
 
-        // ─── CHANGE 'db.query' TO 'pool.query' HERE ───
         const result = await pool.query(queryText, queryParams);
-        
         res.json({ success: true, complaints: result.rows });
     } catch (err) {
         console.error("Error fetching complaints:", err);
