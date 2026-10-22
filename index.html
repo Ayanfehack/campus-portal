@@ -1318,6 +1318,39 @@
             }
         }
 
+        async function handleSendAssistantMessage() {
+            const inputEl = document.getElementById('chatInput');
+            const userText = inputEl ? inputEl.value.trim() : '';
+
+            if (!userText) return;
+
+            // Render student's message in the chat container
+            appendChatMessage('user', userText);
+            inputEl.value = '';
+
+            try {
+                const res = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: userText,
+                        userName: currentUser ? currentUser.fullName : 'Student'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.reply) {
+                    appendChatMessage('assistant', data.reply);
+                } else {
+                    appendChatMessage('assistant', "I am currently unable to reach the administrative server.");
+                }
+            } catch (err) {
+                console.error("Chat error:", err);
+                appendChatMessage('assistant', "Connection error. Please try again.");
+            }
+        }
+
         // Handle Appointment Accept / Reschedule
         async function handleAppointmentAction(appointmentId, status, newDate = null, newTime = null, staffNote = '') {
             try {

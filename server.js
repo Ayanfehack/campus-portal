@@ -432,6 +432,53 @@ app.post('/api/admin/reply-complaint', async (req, res) => {
     }
 });
 
+const { GoogleGenAI } = require('@google/genai');
+
+// Initialize Gemini with your environment variable
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+app.post('/api/chat', async (req, res) => {
+    const { message, userName } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ error: "Message is required." });
+    }
+
+    try {
+        const systemInstruction = `
+            You are UniClarity AI, an official university administrative assistant.
+            
+            Strict Administrative Routing Rules:
+            1. If the user mentions "result", "grade", or "transcript", tell them to contact their Part Adviser or book an appointment via the portal.
+            2. If the user mentions "hostel" or "accommodation", direct them to the Dean of Student Affairs (DSA).
+            3. If the user complains about "portal access" or "login issues", tell them to click "Forgot Password" on the sign-in page and check their student email for the reset link.
+            
+            Tone & Style:
+            - Concise, helpful, official, and warm.
+            - User's Name: ${userName || 'Student'}.
+            - Answer general university administrative questions accurately.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: message,
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.3
+            }
+        });
+
+        res.json({ 
+            success: true, 
+            reply: response.text 
+        });
+
+    } catch (err) {
+        console.error("Gemini API Error:", err);
+        res.status(500).json({ error: "AI Assistant unavailable right now." });
+    }
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
