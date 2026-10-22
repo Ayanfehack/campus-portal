@@ -56,9 +56,10 @@ async function sendNotificationEmail(toEmail, subject, message) {
 }
 
 // Initialize Database Tables
+// Initialize Database Tables & Auto-Migrate Missing Columns
 async function initDb() {
     try {
-        // Users Table (Supports both Students & Staff with Roles)
+        // Users Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -66,15 +67,15 @@ async function initDb() {
                 user_id VARCHAR(100) UNIQUE NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) NOT NULL, -- 'student' or 'staff'
+                role VARCHAR(50) NOT NULL,
                 faculty VARCHAR(255),
                 department VARCHAR(255),
                 level VARCHAR(50),
-                staff_role VARCHAR(100) -- e.g., 'Part Adviser', 'Dean of Student Affairs', 'Cash Officer', 'Head Administrative Staff'
+                staff_role VARCHAR(100)
             );
         `);
 
-        // Complaints Table (Consolidated with attachment support)
+        // Complaints Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS complaints (
                 id VARCHAR(50) PRIMARY KEY,
@@ -92,6 +93,12 @@ async function initDb() {
             );
         `);
 
+        // Auto-add reply columns if they don't exist yet
+        await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS reply TEXT;`);
+        await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS replied_by VARCHAR(255);`);
+        await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS replied_at TIMESTAMP;`);
+        await pool.query(`ALTER TABLE complaints ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;`);
+
         // Appointments Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS appointments (
@@ -106,9 +113,15 @@ async function initDb() {
             );
         `);
 
-        console.log('PostgreSQL database tables verified/created successfully.');
+        // Auto-add appointment scheduling columns if they don't exist yet
+        await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS date VARCHAR(100);`);
+        await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS time VARCHAR(100);`);
+        await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_note TEXT;`);
+        await pool.query(`ALTER TABLE appointments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;`);
+
+        console.log('PostgreSQL database tables and columns verified successfully.');
     } catch (err) {
-        console.error('Error creating database tables:', err);
+        console.error('Error initializing database tables:', err);
     }
 }
 
