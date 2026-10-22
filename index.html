@@ -958,6 +958,32 @@
             }
         }
 
+        // Call this right after a staff member logs in successfully
+        function loadStaffDashboardData() {
+            loadUserRecords(); // Fetches complaints based on currentUser role/department
+            loadStaffAppointments(); // Fetches appointments
+        }
+
+        async function loadStaffAppointments() {
+            if (!currentUser) return;
+
+            try {
+                const url = `${API_URL}/appointments?userId=${encodeURIComponent(currentUser.userId)}&role=${encodeURIComponent(currentUser.role)}&department=${encodeURIComponent(currentUser.department || '')}`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (res.ok) {
+                    activeRecords.appointments = data.appointments || [];
+                    renderStaffAppointments(); // Renders them on the staff UI
+                } else {
+                    console.error("Failed to fetch appointments:", data.error);
+                }
+            } catch (err) {
+                console.error("Error loading staff appointments:", err);
+            }
+        }
+
         function renderComplaintsList() {
             const container = document.getElementById('complaintsListContainer');
             if (!container) return;

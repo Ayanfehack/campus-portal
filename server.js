@@ -228,10 +228,16 @@ app.get('/api/complaints', async (req, res) => {
         let queryText = '';
         let queryParams = [];
 
-        if (role === 'staff') {
-            // Fetch complaints assigned to staff's department or addressed to staff
-            queryText = 'SELECT * FROM complaints WHERE department = $1 OR assigned_to = $2 ORDER BY created_at DESC';
-            queryParams = [department, userId];
+        if (role === 'staff' || role === 'admin') {
+            if (department && department !== 'All') {
+                // Use ILIKE for flexible matching
+                queryText = 'SELECT * FROM complaints WHERE department ILIKE $1 ORDER BY created_at DESC';
+                queryParams = [`%${department}%`];
+            } else {
+                // If no specific department is set for staff, return all complaints so they don't miss anything
+                queryText = 'SELECT * FROM complaints ORDER BY created_at DESC';
+                queryParams = [];
+            }
         } else {
             // Fetch complaints logged by the specific student
             queryText = 'SELECT * FROM complaints WHERE student_id = $1 ORDER BY created_at DESC';
@@ -262,6 +268,36 @@ app.post('/api/appointments', async (req, res) => {
     } catch (err) {
         console.error('Appointment Error:', err);
         res.status(500).json({ error: 'Failed to book appointment.' });
+    }
+});
+
+app.get('/api/appointments', async (req, res) => {
+    const { userId, role, department } = req.query;
+
+    try {
+        let queryText = '';
+        let queryParams = [];
+
+        if (role === 'staff' || role === 'admin') {
+            if (department && department !== 'All') {
+                queryText = 'SELECT * FROM appointments WHERE department ILIKE $1 ORDER BY created_at DESC';
+                queryParams = [`%${department}%`];
+            } else {
+                // Show all appointments to staff if department isn't restricted
+                queryText = 'SELECT * FROM appointments ORDER BY created_at DESC';
+                queryParams = [];
+            }
+        } else {
+            // Fetch appointments booked by the specific student
+            queryText = 'SELECT * FROM appointments WHERE student_id = $1 ORDER BY created_at DESC';
+            queryParams = [userId];
+        }
+
+        const result = await db.query(queryText, queryParams);
+        res.json({ success: true, appointments: result.rows });
+    } catch (err) {
+        console.error("Error fetching appointments:", err);
+        res.status(500).json({ error: "Failed to load appointments" });
     }
 });
 
